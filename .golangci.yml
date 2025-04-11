@@ -1,0 +1,49 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: false
+
+linters:
+  enable:
+    - govet            # Reports suspicious constructs
+    - errcheck         # Checks for unchecked errors
+    - staticcheck      # Finds bugs and performance issues
+    - unused           # Checks for unused variables, constants, etc.
+    - ineffassign      # Detects ineffectual assignments
+    - gocritic         # Detects various code issues
+    - gosec            # Security-related issues
+    - prealloc         # Suggests preallocating slices
+    - whitespace       # Detects unnecessary whitespace
+    - misspell         # Detects spelling errors
+    - revive           # Extensible, configurable, and faster linter
+
+  disable:
+    - godox            # Ignores TODO comments
+    - funlen           # Disables function length checks
+    - gocyclo          # Disables cyclomatic complexity checks
+    - lll              # Disables line length checks
+    - wsl              # Disables whitespace checks in strings
+    - nakedret         # Disables naked return checks
+    - exhaustive       # Disables exhaustive enum checks
+
+issues:
+  exclude-rules:
+    - linters:
+        - errcheck
+      text: "defer .* Close" # Ignore unchecked errors for deferred Close calls
+
+  exclude:
+    - "error return value not checked.*Close" # Ignore Close errors
+    - "should have comment or be unexported"  # Ignore comments for unexported items
+
+linters-settings:
+  gosec:
+    exclude:
+      - G104 # Ignore errors related to unsafe string conversions
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    include-go-root: false
+  misspell:
+    locale: US
