@@ -7,11 +7,13 @@ import (
 
 	"github.com/enesanbar/go-service/instrumentation"
 	"github.com/enesanbar/go-service/router/middlewares"
+	"github.com/enesanbar/go-service/router/otel"
 )
 
 var Module = fx.Options(
 	factories,
 	middlewares.Module,
+	otel.Module,
 	interfaceTypes,
 )
 

@@ -7,7 +7,6 @@ import (
 	"github.com/enesanbar/go-service/log"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
-
 	"go.uber.org/fx"
 )
 
