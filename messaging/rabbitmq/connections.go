@@ -3,24 +3,30 @@ package rabbitmq
 import (
 	"github.com/enesanbar/go-service/config"
 	"github.com/enesanbar/go-service/log"
+	"go.uber.org/zap"
 )
 
 func RabbitMQConnections(conf config.Config, logger log.Factory) (map[string]*Connection, error) {
-	cfg := conf.GetStringMap("datasources.rabbitmq")
-
+	prefix := "datasources.rabbitmq.connections"
+	cfg := conf.GetStringMap(prefix)
 	connections := make(map[string]*Connection)
-	for k, v := range cfg {
+	for k := range cfg {
+		config, err := NewConnectionConfig(conf, k)
+		if err != nil {
+			logger.Bg().
+				With(zap.String("connection", k)).
+				With(zap.Error(err)).
+				Error("failed to create connection config")
+			return nil, err
+		}
 		conn := &Connection{
 			logger: logger,
-			Config: &Config{
-				Name: k,
-				Host: v.(map[string]interface{})["host"].(string),
-				Port: v.(map[string]interface{})["port"].(string),
-				User: v.(map[string]interface{})["username"].(string),
-				Pass: v.(map[string]interface{})["password"].(string),
-			},
+			Config: config,
 		}
-		conn.connect()
+		err = conn.connect()
+		if err != nil {
+			return nil, err
+		}
 		connections[k] = conn
 	}
 

@@ -13,7 +13,8 @@ type Params struct {
 var Module = fx.Module(
 	"rabbitmq",
 	fx.Provide(RabbitMQConnections),
-	// fx.Invoke(func(p Params) {
-	// 	println("Connected to RabbitMQ:", p.Conn.Config.Name)
-	// }),
+	fx.Provide(RabbitMQChannels),
+	fx.Provide(RabbitMQQueues),
+	fx.Provide(RabbitMQExchanges),
+	fx.Invoke(RabbitMQBindings),
 )

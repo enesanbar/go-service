@@ -13,7 +13,7 @@ const (
 	PropertyPassword = "password"
 )
 
-type Config struct {
+type ConnectionConfig struct {
 	Name string
 	Port string
 	Host string
@@ -21,8 +21,8 @@ type Config struct {
 	Pass string
 }
 
-func NewConfig(cfg config.Config, name string) (*Config, error) {
-	keyTemplate := "datasources.rabbitmq.%s.%s"
+func NewConnectionConfig(cfg config.Config, name string) (*ConnectionConfig, error) {
+	keyTemplate := "datasources.rabbitmq.connections.%s.%s"
 
 	property := fmt.Sprintf(keyTemplate, name, PropertyHost)
 	host := cfg.GetString(property)
@@ -46,7 +46,7 @@ func NewConfig(cfg config.Config, name string) (*Config, error) {
 		return nil, config.NewMissingPropertyError(property)
 	}
 
-	return &Config{
+	return &ConnectionConfig{
 		Host: host,
 		Port: port,
 		User: username,

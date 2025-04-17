@@ -82,6 +82,10 @@ func (c *FileConfigProvider) GetStringMap(key string) map[string]interface{} {
 	return c.viper.GetStringMap(key)
 }
 
+func (c *FileConfigProvider) GetSliceOfObjects(key string) []interface{} {
+	return c.viper.Get(key).([]interface{})
+}
+
 func (c *FileConfigProvider) GetInt(key string) int {
 	return c.viper.GetInt(key)
 }

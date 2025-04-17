@@ -14,6 +14,7 @@ const (
 type Config interface {
 	GetString(key string) string
 	GetStringMap(key string) map[string]interface{}
+	GetSliceOfObjects(key string) []interface{}
 	GetInt(key string) int
 	GetBool(key string) bool
 	GetStringSlice(key string) []string

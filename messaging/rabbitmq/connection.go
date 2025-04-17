@@ -15,14 +15,14 @@ type Connection struct {
 	logger        log.Factory
 	Conn          *amqp.Connection
 	ConnCloseChan chan *amqp.Error
-	Config        *Config
+	Config        *ConnectionConfig
 }
 
 type ConnectionParams struct {
 	fx.In
 
 	Logger log.Factory
-	Config *Config
+	Config *ConnectionConfig
 }
 
 func NewConnector(p ConnectionParams) (*Connection, error) {
@@ -32,9 +32,9 @@ func NewConnector(p ConnectionParams) (*Connection, error) {
 	}, nil
 }
 
-func (c *Connection) connect() {
+func (c *Connection) connect() error {
 	c.logger.Bg().
-		With(zap.String("db", c.Config.Host)).
+		With(zap.String("host", c.Config.Host)).
 		With(zap.String("name", c.Config.Name)).
 		Info("connecting to rabbitmq")
 
@@ -53,33 +53,45 @@ func (c *Connection) connect() {
 			With(zap.String("name", c.Config.Name)).
 			With(zap.Error(err)).
 			Error("failed to connect to rabbitmq, retrying in 5 seconds")
-
-		time.Sleep(5 * time.Second)
+		return err
 	}
 
 	connChan := make(chan *amqp.Error)
 	conn.NotifyClose(connChan)
 
 	c.logger.Bg().
-		With(zap.String("db", c.Config.Host)).
+		With(zap.String("host", c.Config.Host)).
 		With(zap.String("name", c.Config.Name)).
 		Info("connected to rabbitmq")
 
+	// TODO: Fix the data race (access and write to Conn) between the channel and the connection on restart
 	c.Conn = conn
 	c.ConnCloseChan = connChan
+
+	return nil
 }
 
 func (c *Connection) Start(ctx context.Context) error {
+	c.logger.Bg().
+		With(zap.String("name", c.Config.Name)).
+		Info("starting connection watcher")
+
 	for {
+		if c.ConnCloseChan == nil {
+			time.Sleep(5 * time.Second)
+		}
 		select {
 		case err := <-c.ConnCloseChan:
 			c.logger.Bg().
-				With(zap.String("db", c.Config.Host)).
+				With(zap.String("host", c.Config.Host)).
 				With(zap.String("name", c.Config.Name)).
 				With(zap.Error(err)).
 				Error("connection closed")
-			c.Close(ctx)
+			if !c.Conn.IsClosed() {
+				c.Close(ctx)
+			}
 			c.connect()
+			time.Sleep(5 * time.Second)
 		}
 
 	}
