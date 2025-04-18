@@ -6,6 +6,8 @@ import (
 	"github.com/enesanbar/go-service/info"
 	"github.com/enesanbar/go-service/instrumentation"
 	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/messaging/consumer"
+	"github.com/enesanbar/go-service/messaging/producer"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"github.com/enesanbar/go-service/router"
 	"github.com/enesanbar/go-service/transport/http"
@@ -46,6 +48,7 @@ func New(name string) Builder {
 				return &fxevent.ZapLogger{Logger: logger}
 			}),
 			rabbitmq.Module,
+			producer.Module,
 		},
 		Objects: []interface{}{},
 	}
@@ -89,6 +92,16 @@ func (b Builder) WithService(service Service) Builder {
 
 func (b Builder) WithRestAdapter() Builder {
 	b.Options = append(b.Options, http.Module, router.Module)
+	return b
+}
+
+func (b Builder) WithGRPCAdapter() Builder {
+	b.Options = append(b.Options, http.Module)
+	return b
+}
+
+func (b Builder) WithConsumer() Builder {
+	b.Options = append(b.Options, consumer.Module)
 	return b
 }
 
