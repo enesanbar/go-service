@@ -5,11 +5,13 @@ import (
 	"github.com/enesanbar/go-service/healthchecker"
 	"github.com/enesanbar/go-service/info"
 	"github.com/enesanbar/go-service/instrumentation"
+	"github.com/enesanbar/go-service/instrumentation/otel"
 	"github.com/enesanbar/go-service/log"
 	"github.com/enesanbar/go-service/messaging/consumer"
 	"github.com/enesanbar/go-service/messaging/producer"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"github.com/enesanbar/go-service/router"
+	"github.com/enesanbar/go-service/transport/grpc"
 	"github.com/enesanbar/go-service/transport/http"
 	"github.com/enesanbar/go-service/validation"
 	"go.uber.org/fx"
@@ -42,6 +44,7 @@ func New(name string) Builder {
 		},
 		Options: []fx.Option{
 			validation.Module,
+			otel.Module,
 			config.Module,
 			healthchecker.Module,
 			fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {
@@ -90,18 +93,21 @@ func (b Builder) WithService(service Service) Builder {
 	return b.WithInvoke(service.InvokeFunc)
 }
 
-func (b Builder) WithRestAdapter() Builder {
+func (b Builder) WithRestAdapter(options ...fx.Option) Builder {
 	b.Options = append(b.Options, http.Module, router.Module)
+	b.Options = append(b.Options, options...)
 	return b
 }
 
-func (b Builder) WithGRPCAdapter() Builder {
-	b.Options = append(b.Options, http.Module)
+func (b Builder) WithGRPCAdapter(options ...fx.Option) Builder {
+	b.Options = append(b.Options, grpc.Module)
+	b.Options = append(b.Options, options...)
 	return b
 }
 
-func (b Builder) WithConsumer() Builder {
+func (b Builder) WithConsumer(options ...fx.Option) Builder {
 	b.Options = append(b.Options, consumer.Module)
+	b.Options = append(b.Options, options...)
 	return b
 }
 

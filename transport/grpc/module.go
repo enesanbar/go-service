@@ -1,11 +1,11 @@
-package http
+package grpc
 
 import (
 	"go.uber.org/fx"
 )
 
 var Module = fx.Module(
-	"transport.http",
+	"transport.grpc",
 	fx.Provide(
 		New,
 		NewConfig,

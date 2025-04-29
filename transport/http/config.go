@@ -23,8 +23,8 @@ type ServerConfig struct {
 	WriteTimeout int
 }
 
-func NewServerConfig(cfg config.Config) *ServerConfig {
-	key := "server.%s"
+func NewConfig(cfg config.Config) *ServerConfig {
+	key := "server.http.%s"
 
 	property := fmt.Sprintf(key, Port)
 	port := cfg.GetInt(property)
