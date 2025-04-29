@@ -1,6 +1,8 @@
 package messages
 
 import (
+	"bytes"
+	"encoding/json"
 	"time"
 )
 
@@ -16,6 +18,12 @@ type Metadata struct {
 type Message[T any] struct {
 	Metadata Metadata `json:"metadata"`
 	Payload  T        `json:"payload"`
+}
+
+func (m *Message[T]) UnmarshalPayload(o any) error {
+	buf := new(bytes.Buffer)
+	json.NewEncoder(buf).Encode(m.Payload)
+	return json.NewDecoder(buf).Decode(o)
 }
 
 func (m *Metadata) GetPublisherName() string {

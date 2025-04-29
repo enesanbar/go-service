@@ -7,4 +7,5 @@ import (
 type MessageHandler interface {
 	Handle(message messages.Message[any]) error
 	Properties() MessageProperties
+	GetMessageType() any
 }
