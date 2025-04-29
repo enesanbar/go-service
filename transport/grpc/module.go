@@ -14,6 +14,7 @@ var Module = fx.Module(
 		AsServerOption(NewGRPCServerOptionKeepAliveEnforcementPolicy),
 		AsServerOption(NewGRPCServerOptionKeepAliveParams),
 	),
+	fx.Invoke(NewHealthCheckHandler), // TODO: Turn this into scheduled task to check health periodically
 )
 
 func AsServerOption(p any) any {
