@@ -47,10 +47,10 @@ func NewEchoRouter(p EchoParams) *EchoServer {
 		}
 	}
 
-	contextPath := p.Config.GetString("server.context-path")
+	contextPath := p.Config.GetString("server.http.context-path")
 	contextRouter := e.Group(contextPath)
 
-	healthCheckPath := p.Config.GetString("server.healthcheck-path")
+	healthCheckPath := p.Config.GetString("server.http.healthcheck-path")
 	if healthCheckPath == "" {
 		healthCheckPath = "/health"
 	}

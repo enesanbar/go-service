@@ -9,7 +9,8 @@ import (
 	"github.com/enesanbar/go-service/wiring"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	grpc "google.golang.org/grpc"
+
+	"google.golang.org/grpc"
 )
 
 type GRPCServerParams struct {
@@ -17,6 +18,8 @@ type GRPCServerParams struct {
 
 	Logger log.Factory
 	Config *ServerConfig
+
+	ServerOptions []grpc.ServerOption `group:"grpc-server-options"`
 }
 
 type GRPCServer struct {
@@ -26,7 +29,8 @@ type GRPCServer struct {
 }
 
 func New(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
-	s := grpc.NewServer()
+	// Set up OpenTelemetry server interceptor
+	s := grpc.NewServer(p.ServerOptions...)
 
 	grpcServer := &GRPCServer{
 		Server: s,

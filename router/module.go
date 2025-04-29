@@ -19,7 +19,6 @@ var factories = fx.Provide(
 	NewBaseHandler,
 	NewHealthCheckHandler,
 	NewEchoRouter,
-	NewTelemetryServer,
 	NewProfileServer,
 	instrumentation.NewPrometheusService,
 )

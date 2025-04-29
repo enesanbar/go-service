@@ -26,6 +26,7 @@ require (
 
 require (
 	github.com/instana/go-sensor/instrumentation/instamongo v1.28.1
+	github.com/labstack/echo-contrib v0.17.3
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/spf13/viper/remote v1.20.1
 	go.mongodb.org/mongo-driver v1.17.3
@@ -34,9 +35,11 @@ require (
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.35.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.57.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.35.0
 	go.opentelemetry.io/otel/exporters/zipkin v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
+	go.opentelemetry.io/otel/sdk/metric v1.35.0
 	google.golang.org/grpc v1.71.1
 )
 
@@ -67,7 +70,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect

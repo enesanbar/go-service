@@ -6,8 +6,9 @@ import (
 
 var Module = fx.Provide(
 	AsMiddleware(NewInstanaMiddleware),
-	AsMiddleware(NewMetricsMiddleware),
 	AsMiddleware(NewRequestIDMiddleware),
 	AsMiddleware(NewLoggerMiddleware),
 	AsMiddleware(NewBodyDumpMiddleware),
+	// AsMiddleware(NewMetricsMiddleware),
+	AsMiddleware(NewEchoPrometheusMiddleware),
 )
