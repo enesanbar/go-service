@@ -10,12 +10,16 @@ var Module = fx.Module(
 		NewServer,
 		NewServerConfig,
 		NewClientFactory,
+		NewStatsHandler,
 		AsServerOption(NewGRPCServerOptionOTEL),
+		AsServerOption(NewGRPCServerOptionOTELStats),
 		AsServerOption(NewGRPCServerOptionStats),
 		AsServerOption(NewGRPCServerOptionKeepAliveEnforcementPolicy),
 		AsServerOption(NewGRPCServerOptionKeepAliveParams),
 		AsClientOption(NewGRPCServerOptionStats),
 		AsClientOption(NewGRPCClientOptionOTEL),
+		AsClientOption(NewGRPCClientOptionOTELStats),
+		AsClientOption(NewGRPCClientOptionStats),
 	),
 	fx.Invoke(NewHealthCheckHandler), // TODO: Turn this into scheduled task to check health periodically
 )

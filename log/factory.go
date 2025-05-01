@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/enesanbar/go-service/utils"
-
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -28,23 +28,22 @@ func (b Factory) Bg() Logger {
 // For returns a context-aware Logger. If the context
 // contains an OpenTracing span, all logging calls are also
 // echo-ed into the span.
+// TODO: investigate alternative logging implementations
 func (b Factory) For(ctx context.Context) Logger {
-	// if span := opentracing.SpanFromContext(ctx); span != nil {
-	// 	logger := spanLogger{span: span, logger: b.logger}
+	if span := trace.SpanFromContext(ctx); span != nil && span.SpanContext().IsValid() {
+		logger := spanLogger{span: span, logger: b.logger}
 
-	// 	if jaegerCtx, ok := span.Context().(jaeger.SpanContext); ok {
-	// 		logger.spanFields = []zapcore.Field{
-	// 			zap.String("trace_id", jaegerCtx.TraceID().String()),
-	// 			zap.String("span_id", jaegerCtx.SpanID().String()),
-	// 		}
-	// 	}
+		logger.spanFields = []zapcore.Field{
+			zap.String("trace_id", span.SpanContext().TraceID().String()),
+			zap.String("span_id", span.SpanContext().SpanID().String()),
+			zap.Any("context", span.SpanContext()), // debugging purposes
+		}
 
-	// 	return logger
-	// }
+		return logger
+	}
 
 	keys := map[string]utils.ContextKey{
 		"request_id": utils.ContextKeyRequestID,
-		"username":   utils.ContextKeyUsername,
 	}
 
 	logger := b.Bg()
