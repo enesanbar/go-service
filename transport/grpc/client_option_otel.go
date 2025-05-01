@@ -13,23 +13,22 @@ import (
 	"google.golang.org/grpc/stats/opentelemetry"
 )
 
-type GRPCServerOptionOTELParams struct {
+type GRPCClientOptionOTELParams struct {
 	fx.In
 
 	Logger log.Factory
-	Config *ServerConfig
 
 	TracerProvider     *trace.TracerProvider
 	Propagator         propagation.TextMapPropagator
 	PrometheusExporter *prometheus.Exporter
 }
 
-func NewGRPCServerOptionOTEL(p GRPCServerOptionOTELParams) grpc.ServerOption {
+func NewGRPCClientOptionOTEL(p GRPCClientOptionOTELParams) grpc.DialOption {
 	// Configure meter provider for metrics
 	meterProvider := otelmetric.NewMeterProvider(otelmetric.WithReader(p.PrometheusExporter))
 
 	// Configure W3C Trace Context Propagator for traces
-	return opentelemetry.ServerOption(opentelemetry.Options{
+	return opentelemetry.DialOption(opentelemetry.Options{
 		MetricsOptions: opentelemetry.MetricsOptions{
 			MeterProvider: meterProvider,
 		},
