@@ -19,7 +19,7 @@ type ServerConfig struct {
 	GracefulStopTimeoutSeconds int
 }
 
-func NewConfig(cfg config.Config) *ServerConfig {
+func NewServerConfig(cfg config.Config) *ServerConfig {
 	key := "server.grpc.%s"
 
 	property := fmt.Sprintf(key, Port)

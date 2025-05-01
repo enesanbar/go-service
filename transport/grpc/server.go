@@ -28,7 +28,7 @@ type GRPCServer struct {
 	cfg    *ServerConfig
 }
 
-func New(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
+func NewServer(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
 	// Set up OpenTelemetry server interceptor
 	s := grpc.NewServer(p.ServerOptions...)
 
@@ -64,12 +64,14 @@ func (s *GRPCServer) Start() error {
 
 func (s *GRPCServer) Stop() error {
 	timer := time.AfterFunc(time.Duration(s.cfg.GracefulStopTimeoutSeconds)*time.Second, func() {
-		s.logger.Bg().Error("grpc server could not be stopped gracefully, forcing stop")
+		s.logger.Bg().Info("gRPC server could not be stopped gracefully, forcing stop")
 		s.Server.Stop()
+		s.logger.Bg().Info("http server forced to stop")
 	})
 	defer timer.Stop()
 
+	s.logger.Bg().Info("gracefully stopping gRPC Server")
 	s.Server.GracefulStop()
-	s.logger.Bg().Info("grpc server stopped gracefully")
+	s.logger.Bg().Info("gRPC server stopped gracefully")
 	return nil
 }

@@ -15,12 +15,16 @@ const (
 
 	WriteTimeout        = "write_timeout"
 	WriteTimeoutDefault = 20
+
+	GracefulStopTimeoutSeconds = "graceful_stop_timeout_seconds"
+	GracefulStopTimeoutDefault = 10
 )
 
 type ServerConfig struct {
-	Port         int
-	ReadTimeout  int
-	WriteTimeout int
+	Port                       int
+	ReadTimeout                int
+	WriteTimeout               int
+	GracefulStopTimeoutSeconds int
 }
 
 func NewConfig(cfg config.Config) *ServerConfig {
@@ -44,9 +48,15 @@ func NewConfig(cfg config.Config) *ServerConfig {
 		writeTimeout = WriteTimeoutDefault
 	}
 
+	gracefulStopTimeout := cfg.GetInt(property)
+	if gracefulStopTimeout == 0 {
+		gracefulStopTimeout = GracefulStopTimeoutDefault
+	}
+
 	return &ServerConfig{
-		Port:         port,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
+		Port:                       port,
+		ReadTimeout:                readTimeout,
+		WriteTimeout:               writeTimeout,
+		GracefulStopTimeoutSeconds: gracefulStopTimeout,
 	}
 }

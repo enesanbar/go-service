@@ -39,9 +39,17 @@ func (h HttpServer) Start() error {
 }
 
 func (h HttpServer) Stop() error {
+	timer := time.AfterFunc(time.Duration(h.cfg.GracefulStopTimeoutSeconds)*time.Second, func() {
+		h.logger.Bg().Info("http server could not be stopped gracefully, forcing stop")
+		h.server.Close()
+		h.logger.Bg().Info("http server forced to stop")
+	})
+	defer timer.Stop()
+
 	h.logger.Bg().Info("gracefully stopping HTTP Server")
 	if err := h.server.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("error shutting down Server (%w)", err)
 	}
+	h.logger.Bg().Info("HTTP server stopped gracefully")
 	return nil
 }
