@@ -2,22 +2,22 @@
 ## Introduction
 Go Service is a base service project that supports
 * **routing** and **middleware** support with [echo](https://echo.labstack.com/)
-* ready-to-use and configurable http server 
+* ready-to-use and configurable http server with health checker 
+* ready-to-use and configurable grpc server with health checker
 * context-aware **structured logging** with [uber-go/zap](https://github.com/uber-go/zap)
 * remote and local **configuration** with [viper](https://github.com/spf13/viper) 
-* enforced **health checker**
 * easy **dependency injection** and **application lifecycle management** with [uber-go/fx](https://github.com/uber-go/fx)
-* automatic **prometheus** metrics
+* automatic **prometheus** metrics and open telemetry tracing
 * automatic instana sensor
-* automatic profiling server
+* automatic profiling server for debugging purposes
 * automatic **swagger ui** (given code is annotated and a swagger doc is generated at an expected location)
 * in-memory **caching** with [go-cache](github.com/patrickmn/go-cache), redis and memcached support is coming soon...
 * running **cron** tasks [BETA]
 * connecting common **database** [BETA]
 * **validation** mechanism [BETA]
 
-go-service provides a ready-to-use, batteries included web server and lets you develop your service
-without worrying about various pieces of application development.
+go-service provides a ready-to-use, batteries included web and grpc server and lets you develop your service
+without worrying about various pieces of common microservice components.
 
 ## ROADMAP
 * Add common database connection methods with external pool configuration
@@ -30,9 +30,12 @@ Given the following configuration
 ```yaml
 debug: true
 server:
-  port: 8080
-  context-path: /my-service
-  healthcheck-path: /_hc
+  http:
+	port: 8080
+	context-path: /my-service
+	healthcheck-path: /_hc
+  grpc:
+    port: 50231
 ```
 
 the same configuration can be supplied via environment variables
@@ -95,7 +98,7 @@ If you specify 'test' as an environment variable with **consul** as a config sou
 
 ## Example projects
 
-### Minimal example project
+### Minimal example project (REST)
 Following is a minimal unstructured code in a single file that is required to run a go-service project.
 
 * Create an empty file in a directory of your choice called main.go
@@ -138,7 +141,7 @@ func RegisterRoutes(adapter *Handler) router.RouteConfig {
 	return router.RouteConfig{
 		Path: "/test",
 		Router: func(group *echo.Group) {
-			group.GET("/hello", adapter.Handle) // GET localhost:9090/my-service/test/hello
+			group.GET("/hello", adapter.Handle) // GET localhost:9090/test/hello
 		},
 	}
 }

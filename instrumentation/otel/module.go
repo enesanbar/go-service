@@ -31,9 +31,17 @@ var ZipkinExporterModule = fx.Provide(
 	),
 )
 
+var PrometheusExporterModule = fx.Provide(
+	fx.Annotate(
+		NewPrometheusExporter,
+		fx.As(new(trace.SpanExporter)),
+	),
+)
+
 var factories = fx.Options(
 	NewExporter(),
 	fx.Provide(
+		NewPrometheusExporter,
 		NewTracerProvider,
 		NewPropagator,
 		middlewares.AsMiddleware(NewOtelMiddleware),

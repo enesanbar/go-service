@@ -6,6 +6,7 @@ import (
 	"github.com/enesanbar/go-service/osutil"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.uber.org/fx"
@@ -25,6 +26,10 @@ func NewStdoutExporter() (*stdout.Exporter, error) {
 
 func NewZipkinExporter() (*zipkin.Exporter, error) {
 	return zipkin.New("http://localhost:9411/api/v2/spans")
+}
+
+func NewPrometheusExporter() (*prometheus.Exporter, error) {
+	return prometheus.New()
 }
 
 func NewExporter() fx.Option {

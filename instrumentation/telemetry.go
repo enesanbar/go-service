@@ -1,6 +1,7 @@
 package instrumentation
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -19,9 +20,14 @@ type TelemetryServer struct {
 	logger     log.Factory
 	Server     io.Closer
 	BaseConfig *config.Base
+	cfg        *TelemetryServerConfig
 }
 
-func NewTelemetryServer(logger log.Factory, baseConfig *config.Base) (wiring.RunnableGroup, *TelemetryServer) {
+func NewTelemetryServer(
+	logger log.Factory,
+	baseConfig *config.Base,
+	telemetryConfig *TelemetryServerConfig,
+) (wiring.RunnableGroup, *TelemetryServer) {
 	telemetryRouter := http.NewServeMux()
 
 	telemetryRouter.Handle("/metrics", promhttp.Handler())
@@ -30,6 +36,7 @@ func NewTelemetryServer(logger log.Factory, baseConfig *config.Base) (wiring.Run
 		Router:     telemetryRouter,
 		logger:     logger,
 		BaseConfig: baseConfig,
+		cfg:        telemetryConfig,
 	}
 	return wiring.RunnableGroup{Runnable: server}, server
 }
@@ -54,14 +61,14 @@ func (ts *TelemetryServer) Start() error {
 	}
 
 	srv := &http.Server{
-		Addr:         ":9092",
+		Addr:         fmt.Sprintf(":%d", ts.cfg.Port),
 		Handler:      logger(ts.Router),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  time.Duration(ts.cfg.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(ts.cfg.WriteTimeout) * time.Second,
 	}
 	ts.Server = srv
 
-	ts.logger.Bg().Info("starting Telemetry server on 9092...")
+	ts.logger.Bg().Info(fmt.Sprintf("starting Telemetry server on port %d", ts.cfg.Port))
 	return srv.ListenAndServe()
 }
 
