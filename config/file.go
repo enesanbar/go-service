@@ -97,3 +97,11 @@ func (c *FileConfigProvider) GetBool(key string) bool {
 func (c *FileConfigProvider) GetStringSlice(key string) []string {
 	return c.viper.GetStringSlice(key)
 }
+
+func (c *FileConfigProvider) IsSet(key string) bool {
+	return c.viper.IsSet(key)
+}
+
+func (c *FileConfigProvider) UnmarshalKey(key string, rawVal interface{}) error {
+	return c.viper.UnmarshalKey(key, rawVal)
+}

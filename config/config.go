@@ -18,6 +18,8 @@ type Config interface {
 	GetInt(key string) int
 	GetBool(key string) bool
 	GetStringSlice(key string) []string
+	IsSet(key string) bool
+	UnmarshalKey(key string, rawVal interface{}) error
 }
 
 type CloudProvider interface {

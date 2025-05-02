@@ -33,6 +33,21 @@ const (
 
 	KeepAliveTimeoutSeconds        = "keepalive.timeoutSeconds"
 	KeepAliveTimeoutSecondsDefault = 20 // 20 seconds
+
+	TLSCertFile        = "tls.certFile"
+	TLSCertFileDefault = "/etc/tls/tls.crt"
+
+	TLSKeyFile        = "tls.keyFile"
+	TLSKeyFileDefault = "/etc/tls/tls.key"
+
+	TLSCAFile        = "tls.caFile"
+	TLSCAFileDefault = "/etc/tls/ca.crt"
+
+	ServerTLSEnabled        = "server.grpc.tls.enabled"
+	ServerTLSEnabledDefault = false
+
+	ClientTLSEnabled        = "client.grpc.tls.enabled"
+	ClientTLSEnabledDefault = false
 )
 
 type KeepAlive struct {
@@ -45,10 +60,20 @@ type KeepAlive struct {
 	TimeoutSeconds               int  `json:"timeoutSeconds" yaml:"timeoutSeconds"`                             // // Wait 1 second for the ping ack before assuming the connection is dead
 }
 
+type TLSConfig struct {
+	// Enabled          bool   `json:"enabled" yaml:"enabled"`
+	CertFile         string `json:"certFile" yaml:"certFile"`
+	KeyFile          string `json:"keyFile" yaml:"keyFile"`
+	CAFile           string `json:"caFile" yaml:"caFile"`
+	ServerTLSEnabled bool   `json:"serverTlsEnabled" yaml:"serverTlsEnabled"`
+	ClientTLSEnabled bool   `json:"clientTlsEnabled" yaml:"clientTlsEnabled"`
+}
+
 type ServerConfig struct {
 	Port                       int       `json:"port" yaml:"port"`
 	GracefulStopTimeoutSeconds int       `json:"gracefulStopTimeoutSeconds" yaml:"gracefulStopTimeoutSeconds"`
 	KeepAlive                  KeepAlive `json:"keepalive" yaml:"keepalive"`
+	TLS                        TLSConfig `json:"tls" yaml:"tls"` // if true, use TLS
 }
 
 func NewServerConfig(cfg config.Config) *ServerConfig {
@@ -105,6 +130,29 @@ func NewServerConfig(cfg config.Config) *ServerConfig {
 		TimeoutSeconds:      keepAliveTimeout,
 	}
 
+	tlsCertFile := cfg.GetString(TLSCertFile)
+	if tlsCertFile == "" {
+		tlsCertFile = TLSCertFileDefault
+	}
+
+	tlsKeyFile := cfg.GetString(TLSKeyFile)
+	if tlsKeyFile == "" {
+		tlsKeyFile = TLSKeyFileDefault
+	}
+
+	tlsCAFile := cfg.GetString(TLSCAFile)
+	if tlsCAFile == "" {
+		tlsCAFile = TLSCAFileDefault
+	}
+
+	tls := TLSConfig{
+		ServerTLSEnabled: cfg.GetBool(ServerTLSEnabled),
+		ClientTLSEnabled: cfg.GetBool(ClientTLSEnabled),
+		CertFile:         tlsCertFile,
+		KeyFile:          tlsKeyFile,
+		CAFile:           tlsCAFile,
+	}
+
 	// the default values for MaxConnectionIdle, MaxConnectionAge, and MaxConnectionAgeGrace are infinity
 	// so we only set them if they are not 0
 	if keepAliveMaxConnectionIdle != 0 {
@@ -121,5 +169,6 @@ func NewServerConfig(cfg config.Config) *ServerConfig {
 		Port:                       port,
 		GracefulStopTimeoutSeconds: gracefulStopTimeout,
 		KeepAlive:                  keepAlive,
+		TLS:                        tls,
 	}
 }

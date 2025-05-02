@@ -123,3 +123,11 @@ func (c *ConsulConfigProvider) ReadRemoteProperties() (map[string]interface{}, e
 
 	return base.AllSettings(), nil
 }
+
+func (c *ConsulConfigProvider) IsSet(key string) bool {
+	return c.viper.IsSet(key)
+}
+
+func (c *ConsulConfigProvider) UnmarshalKey(key string, rawVal interface{}) error {
+	return c.viper.UnmarshalKey(key, rawVal)
+}

@@ -12,17 +12,18 @@ var Module = fx.Module(
 		NewClientFactory,
 		NewStatsHandler,
 
-		// OTEL Option and OTELStats: may duplicate the spans, use one of them if so
 		// AsServerOption(NewGRPCServerOptionOTEL), // Experimental
 		AsServerOption(NewGRPCServerOptionOTELStats),
-		AsServerOption(NewGRPCServerOptionStats),
+		// AsServerOption(NewGRPCServerOptionStats),
 		AsServerOption(NewGRPCServerOptionKeepAliveEnforcementPolicy),
 		AsServerOption(NewGRPCServerOptionKeepAliveParams),
+		AsServerOption(NewGRPCServerOptionCredentials),
 
-		// OTEL Option and OTELStats: may duplicate the spans, use one of them if so
-		// AsClientOption(NewGRPCClientOptionOTEL), // Experimental
-		AsClientOption(NewGRPCClientOptionOTELStats),
-		AsClientOption(NewGRPCClientOptionStats),
+		AsClientOption(NewGRPCClientOptionOTEL), // Experimental
+		// AsClientOption(NewGRPCClientOptionOTELStats),
+		// AsClientOption(NewGRPCClientOptionStats),
+		AsClientOption(NewGRPCClientOptionKeepAliveParams),
+		AsClientOption(NewGRPCClientOptionCredentials),
 	),
 	fx.Invoke(NewHealthCheckHandler), // TODO: Turn this into scheduled task to check health periodically
 )
