@@ -1,10 +1,8 @@
 package grpc
 
 import (
-	"github.com/enesanbar/go-service/log"
 	"go.uber.org/fx"
 
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
 	otelmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -16,21 +14,15 @@ import (
 type GRPCClientOptionOTELParams struct {
 	fx.In
 
-	Logger log.Factory
-
-	TracerProvider     *trace.TracerProvider
-	Propagator         propagation.TextMapPropagator
-	PrometheusExporter *prometheus.Exporter
+	TracerProvider *trace.TracerProvider
+	Propagator     propagation.TextMapPropagator
+	MeterProvider  *otelmetric.MeterProvider
 }
 
 func NewGRPCClientOptionOTEL(p GRPCClientOptionOTELParams) grpc.DialOption {
-	// Configure meter provider for metrics
-	meterProvider := otelmetric.NewMeterProvider(otelmetric.WithReader(p.PrometheusExporter))
-
-	// Configure W3C Trace Context Propagator for traces
 	return opentelemetry.DialOption(opentelemetry.Options{
 		MetricsOptions: opentelemetry.MetricsOptions{
-			MeterProvider: meterProvider,
+			MeterProvider: p.MeterProvider,
 		},
 		TraceOptions: oteltracing.TraceOptions{
 			TracerProvider:    p.TracerProvider,

@@ -110,6 +110,9 @@ func (h *RabbitMQQueueConsumer) Start() error {
 				message.UnmarshalPayload(payload)
 				message.Payload = payload
 
+				// ctx := context.Background()
+				// populate context from message
+
 				err = handler.Handle(message)
 				if err != nil {
 					h.logger.Bg().With(zap.Error(err)).Error("failed to handle message")

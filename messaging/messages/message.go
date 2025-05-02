@@ -13,12 +13,30 @@ type Metadata struct {
 	PublishDate   time.Time `json:"publishDate"`
 	Traceparent   string    `json:"traceparent"`
 	Tracestate    string    `json:"tracestate"`
+	SpanID        string    `json:"spanId"`
 }
 
 type Message[T any] struct {
 	Metadata Metadata `json:"metadata"`
 	Payload  T        `json:"payload"`
 }
+
+// func (m *Message[T]) PopulateSpanFromContext(ctx context.Context) {
+// 	span := trace.SpanFromContext(ctx)
+// 	if span.SpanContext().IsValid() {
+// 		m.Metadata.Traceparent = span.SpanContext().TraceID().String()
+// 		m.Metadata.Tracestate = span.SpanContext().TraceState().String()
+// 		m.Metadata.SpanID = span.SpanContext().SpanID().String()
+// 	}
+// }
+
+// func (m *Message[T]) WithSpan() context.Context {
+// 	ctx := context.Background()
+// 	trace.ContextWithSpanContext(ctx, trace.NewSpanContext(
+// 		trace.SpanContextConfig{},
+// 	))
+// 	return context.WithValue(context.Background(), "message", m)
+// }
 
 func (m *Message[T]) UnmarshalPayload(o any) error {
 	buf := new(bytes.Buffer)

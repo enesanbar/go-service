@@ -44,6 +44,7 @@ var factories = fx.Options(
 		NewPrometheusExporter,
 		NewTracerProvider,
 		NewPropagator,
+		NewMeterProvider,
 		middlewares.AsMiddleware(NewOtelMiddleware),
 	),
 )

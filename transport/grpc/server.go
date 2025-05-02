@@ -46,6 +46,7 @@ func NewServer(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
 func (s *GRPCServer) Start() error {
 	s.logger.Bg().
 		With(zap.Int("port", s.cfg.Port)).
+		With(zap.Any("config", s.cfg)).
 		Info("starting GRPC Server")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))

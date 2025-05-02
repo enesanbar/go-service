@@ -51,6 +51,13 @@ func (p *RabbitMQProducer) Publish(ctx context.Context, messageName string, mess
 		return err
 	}
 
+	// span := trace.SpanFromContext(ctx)
+	// if span.SpanContext().IsValid() {
+	// 	message.Metadata.Traceparent = span.SpanContext().TraceID().String()
+	// 	message.Metadata.Tracestate = span.SpanContext().TraceState().String()
+	// 	message.Metadata.SpanID = span.SpanContext().SpanID().String()
+	// }
+
 	return p.Channel.Channel.PublishWithContext(
 		ctx,
 		info.ServiceName, // exchange

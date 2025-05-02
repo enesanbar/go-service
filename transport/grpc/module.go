@@ -11,13 +11,16 @@ var Module = fx.Module(
 		NewServerConfig,
 		NewClientFactory,
 		NewStatsHandler,
-		AsServerOption(NewGRPCServerOptionOTEL),
+
+		// OTEL Option and OTELStats: may duplicate the spans, use one of them if so
+		// AsServerOption(NewGRPCServerOptionOTEL), // Experimental
 		AsServerOption(NewGRPCServerOptionOTELStats),
 		AsServerOption(NewGRPCServerOptionStats),
 		AsServerOption(NewGRPCServerOptionKeepAliveEnforcementPolicy),
 		AsServerOption(NewGRPCServerOptionKeepAliveParams),
-		AsClientOption(NewGRPCServerOptionStats),
-		AsClientOption(NewGRPCClientOptionOTEL),
+
+		// OTEL Option and OTELStats: may duplicate the spans, use one of them if so
+		// AsClientOption(NewGRPCClientOptionOTEL), // Experimental
 		AsClientOption(NewGRPCClientOptionOTELStats),
 		AsClientOption(NewGRPCClientOptionStats),
 	),
