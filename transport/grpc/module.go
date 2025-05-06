@@ -24,6 +24,7 @@ var Module = fx.Module(
 		// AsClientOption(NewGRPCClientOptionStats),
 		AsClientOption(NewGRPCClientOptionKeepAliveParams),
 		AsClientOption(NewGRPCClientOptionCredentials),
+		AsClientOption(NewGRPCClientOptionCircuitBreaker),
 	),
 	fx.Invoke(NewHealthCheckHandler), // TODO: Turn this into scheduled task to check health periodically
 )
