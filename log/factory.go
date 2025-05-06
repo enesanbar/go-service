@@ -9,6 +9,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var (
+	traceIDKey = zap.String("trace_id", "")
+	spanIDKey  = zap.String("span_id", "")
+)
+
 // Factory is the default logging wrapper that can create
 // logger instances either for a given Context or context-less.
 type Factory struct {
