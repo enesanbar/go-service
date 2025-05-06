@@ -10,6 +10,7 @@ import (
 	"github.com/enesanbar/go-service/messaging/consumer"
 	"github.com/enesanbar/go-service/messaging/producer"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
+	"github.com/enesanbar/go-service/persistance/mysql"
 	"github.com/enesanbar/go-service/router"
 	"github.com/enesanbar/go-service/transport/grpc"
 	"github.com/enesanbar/go-service/transport/http"
@@ -54,6 +55,7 @@ func New(name string) Builder {
 			}),
 			rabbitmq.Module,
 			producer.Module,
+			mysql.Module,
 		},
 		Objects: []interface{}{},
 	}
