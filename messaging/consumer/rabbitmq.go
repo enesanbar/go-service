@@ -1,14 +1,19 @@
 package consumer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/enesanbar/go-service/log"
 	"github.com/enesanbar/go-service/messaging/messages"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"github.com/enesanbar/go-service/wiring"
 	"github.com/rabbitmq/amqp091-go"
+	"go.opentelemetry.io/otel/propagation"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -20,6 +25,8 @@ type RabbitMQConsumerParams struct {
 	Queues          map[string]*rabbitmq.Queue
 	Channels        map[string]*rabbitmq.Channel
 	MessageHandlers map[string]MessageHandler
+	Propagator      propagation.TextMapPropagator
+	TracerProvider  *tracesdk.TracerProvider
 }
 
 type RabbitMQQueueConsumer struct {
@@ -29,6 +36,8 @@ type RabbitMQQueueConsumer struct {
 	Channels        map[string]*rabbitmq.Channel
 	Queues          map[string]*rabbitmq.Queue
 	MessageHandlers map[string]MessageHandler
+	Propagator      propagation.TextMapPropagator
+	Tracer          trace.Tracer
 }
 
 // NewRabbitMQConsumer creates a pointer to the new instance of the RabbitMQQueueConsumer
@@ -39,6 +48,8 @@ func NewRabbitMQConsumer(p RabbitMQConsumerParams) (wiring.RunnableGroup, *Rabbi
 		MessageHandlers: p.MessageHandlers,
 		Channels:        p.Channels,
 		Queues:          p.Queues,
+		Propagator:      p.Propagator,
+		Tracer:          p.TracerProvider.Tracer("rabbitmq-consumer"),
 	}
 
 	// set the default channel and queue if it exists in Channels and Queues
@@ -110,10 +121,32 @@ func (h *RabbitMQQueueConsumer) Start() error {
 				message.UnmarshalPayload(payload)
 				message.Payload = payload
 
-				// ctx := context.Background()
-				// populate context from message
+				// Extract parent context from traceparent
+				carrier := propagation.MapCarrier{
+					"traceparent": message.Metadata.Traceparent,
+					"tracestate":  message.Metadata.Tracestate,
+				}
+				ctx := h.Propagator.Extract(context.Background(), carrier)
 
-				err = handler.Handle(message)
+				// Start a new span that:
+				// 1. Continues the trace from traceparent
+				// 2. Links to the span that sent the message (message.Metadata.SpanID)
+				ctx, span := h.Tracer.Start(
+					ctx,
+					"processing: "+message.Metadata.MessageName,
+					trace.WithSpanKind(trace.SpanKindConsumer),
+					trace.WithLinks(trace.Link{
+						SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
+							TraceID:    parseTraceID(message.Metadata.Traceparent), // From traceparent
+							SpanID:     parseSpanID(message.Metadata.SpanID),       // From metadata
+							TraceFlags: trace.FlagsSampled,
+							Remote:     true,
+						}),
+					}),
+				)
+				defer span.End()
+
+				err = handler.Handle(ctx, message)
 				if err != nil {
 					h.logger.Bg().With(zap.Error(err)).Error("failed to handle message")
 				}
@@ -143,4 +176,18 @@ func (h *RabbitMQQueueConsumer) SetQueue(queueName string) {
 		h.logger.Bg().Error(fmt.Sprintf("queue %s not found, check your configuration", queueName))
 	}
 	h.Queue = queue
+}
+
+func parseTraceID(traceparent string) trace.TraceID {
+	parts := strings.Split(traceparent, "-")
+	if len(parts) >= 2 {
+		tid, _ := trace.TraceIDFromHex(parts[1])
+		return tid
+	}
+	return trace.TraceID{}
+}
+
+func parseSpanID(spanID string) trace.SpanID {
+	sid, _ := trace.SpanIDFromHex(spanID)
+	return sid
 }

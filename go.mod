@@ -25,9 +25,11 @@ require (
 )
 
 require (
+	github.com/go-sql-driver/mysql v1.9.2
 	github.com/instana/go-sensor/instrumentation/instamongo v1.30.0
 	github.com/labstack/echo-contrib v0.17.3
 	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper/remote v1.20.1
 	go.mongodb.org/mongo-driver v1.17.3
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.60.0
@@ -52,7 +54,9 @@ require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/firestore v1.18.0 // indirect
 	cloud.google.com/go/longrunning v0.6.7 // indirect
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/XSAM/otelsql v0.38.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

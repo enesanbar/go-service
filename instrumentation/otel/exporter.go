@@ -37,8 +37,6 @@ func NewExporter() fx.Option {
 	switch exporter {
 	case "otlp":
 		return OTLPExporterModule
-	case "stdout":
-		return StdoutExporterModule
 	case "zipkin":
 		return ZipkinExporterModule
 	default:

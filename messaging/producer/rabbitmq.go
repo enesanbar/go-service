@@ -4,33 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/enesanbar/go-service/info"
 	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/messaging/messages"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"github.com/rabbitmq/amqp091-go"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 
 	"go.uber.org/fx"
 )
 
 // TODO: Move this to a common package
 type RabbitMQProducer struct {
-	Logger   log.Factory
-	Channel  *rabbitmq.Channel
-	Channels map[string]*rabbitmq.Channel
+	Logger     log.Factory
+	Channel    *rabbitmq.Channel
+	Channels   map[string]*rabbitmq.Channel
+	Propagator propagation.TextMapPropagator
 }
 
 type RabbitMQProducerParams struct {
 	fx.In
 
-	Logger   log.Factory
-	Channels map[string]*rabbitmq.Channel
+	Logger     log.Factory
+	Channels   map[string]*rabbitmq.Channel
+	Propagator propagation.TextMapPropagator
 }
 
 func NewRabbitMQProducer(params RabbitMQProducerParams) *RabbitMQProducer {
 	p := &RabbitMQProducer{
-		Logger:   params.Logger,
-		Channels: params.Channels,
+		Logger:     params.Logger,
+		Channels:   params.Channels,
+		Propagator: params.Propagator,
 	}
 	// set the default channel and queue if exists in Channels and Queues
 	if len(p.Channels) > 0 {
@@ -45,18 +52,23 @@ func NewRabbitMQProducer(params RabbitMQProducerParams) *RabbitMQProducer {
 	return p
 }
 
-func (p *RabbitMQProducer) Publish(ctx context.Context, messageName string, message any) error {
+func (p *RabbitMQProducer) Publish(ctx context.Context, messageName string, payload any) error {
+	message := messages.Message[any]{
+		Metadata: messages.Metadata{
+			PublisherName: info.ServiceName,
+			PublishDate:   time.Now().UTC(),
+			MessageName:   messageName,
+		},
+		Payload: payload,
+	}
+
+	// Enrich the message with trace information
+	p.enrichMessageWithTrace(ctx, &message)
+
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-
-	// span := trace.SpanFromContext(ctx)
-	// if span.SpanContext().IsValid() {
-	// 	message.Metadata.Traceparent = span.SpanContext().TraceID().String()
-	// 	message.Metadata.Tracestate = span.SpanContext().TraceState().String()
-	// 	message.Metadata.SpanID = span.SpanContext().SpanID().String()
-	// }
 
 	return p.Channel.Channel.PublishWithContext(
 		ctx,
@@ -77,4 +89,21 @@ func (p *RabbitMQProducer) SetChannel(channelName string) {
 		p.Logger.Bg().Error(fmt.Sprintf("channel %s not found", channelName))
 	}
 	p.Channel = channel
+}
+
+func (p *RabbitMQProducer) enrichMessageWithTrace(ctx context.Context, message *messages.Message[any]) {
+	span := trace.SpanFromContext(ctx)
+	if !span.SpanContext().IsValid() {
+		return
+	}
+
+	// Properly inject trace context using OpenTelemetry's propagator
+	carrier := propagation.MapCarrier{}
+	p.Propagator.Inject(ctx, carrier)
+
+	message.Metadata.Traceparent = carrier["traceparent"]
+	message.Metadata.Tracestate = carrier["tracestate"]
+
+	// This is the CURRENT span ID (the one sending the message)
+	message.Metadata.SpanID = span.SpanContext().SpanID().String()
 }
