@@ -17,9 +17,8 @@ import (
 type GRPCServerOptionCredentialsParams struct {
 	fx.In
 
-	Logger       log.Factory
-	Config       *ServerConfig
-	StatsHandler *StatsHandler
+	Logger log.Factory
+	Config *ServerConfig
 }
 
 func NewGRPCServerOptionCredentials(p GRPCServerOptionCredentialsParams) grpc.ServerOption {
