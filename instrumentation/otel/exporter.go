@@ -13,10 +13,13 @@ import (
 )
 
 func NewOTLPExporter() (*otlptrace.Exporter, error) {
+	endpoint_url := osutil.GetEnv("OTEL_EXPORTER_OTLP_ENDPOINT_URL", "http://localhost:4318/v1/traces")
+
+	// further configure the options if needed
 	return otlptracehttp.New(
 		context.Background(),
-		otlptracehttp.WithInsecure(),                 // # TODO: make this configurable
-		otlptracehttp.WithEndpoint("localhost:4318"), // # TODO: make this configurable
+		// otlptracehttp.WithInsecure(),
+		otlptracehttp.WithEndpointURL(endpoint_url),
 	)
 }
 
@@ -33,7 +36,7 @@ func NewPrometheusExporter() (*prometheus.Exporter, error) {
 }
 
 func NewExporter() fx.Option {
-	exporter := osutil.GetEnv("OTEL_EXPORTER", "stdout")
+	exporter := osutil.GetEnv("OTEL_EXPORTER_TYPE", "stdout")
 	switch exporter {
 	case "otlp":
 		return OTLPExporterModule

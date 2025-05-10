@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type GRPCServerParams struct {
@@ -29,9 +30,8 @@ type GRPCServer struct {
 }
 
 func NewServer(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
-	// Set up OpenTelemetry server interceptor
 	s := grpc.NewServer(p.ServerOptions...)
-
+	reflection.Register(s)
 	grpcServer := &GRPCServer{
 		Server: s,
 		logger: p.Logger,
