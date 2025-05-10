@@ -1,8 +1,6 @@
 package log
 
 import (
-	"os"
-
 	"github.com/enesanbar/go-service/osutil"
 
 	"go.uber.org/fx"
@@ -31,17 +29,17 @@ func NewZapLogger() (*zap.Logger, error) {
 			zap.AddCallerSkip(1),
 		)
 	} else {
-		logger, err = zap.NewProduction()
+		logger, err = zap.NewProduction(
+			zap.AddStacktrace(zapcore.ErrorLevel),
+			zap.AddCallerSkip(1),
+			zap.AddCaller(),
+			zap.Fields(zap.String("version", info.Version)),
+		)
 	}
 
 	if err != nil {
 		return nil, err
 	}
-
-	hostname, _ := os.Hostname()
-	logger = logger.With(
-		zap.String("service", info.ServiceName),
-		zap.String("hostname", hostname))
 
 	return logger, nil
 }
