@@ -10,7 +10,7 @@ var Module = fx.Module(
 		NewServer,
 		NewServerConfig,
 		NewClientFactory,
-		NewStatsHandler,
+		NewRequestLoggerStatsHandler,
 
 		// AsServerOption(NewGRPCServerOptionOTEL), // Experimental
 		AsServerOption(NewGRPCServerOptionOTELStats),
@@ -18,9 +18,11 @@ var Module = fx.Module(
 		AsServerOption(NewGRPCServerOptionKeepAliveEnforcementPolicy),
 		AsServerOption(NewGRPCServerOptionKeepAliveParams),
 		AsServerOption(NewGRPCServerOptionCredentials),
+		AsServerOption(NewGRPCServerOptionRequestLoggerStats),
+		AsServerOption(NewGRPCServerOptionUnaryInterceptorErrorHandler),
 
-		AsClientOption(NewGRPCClientOptionOTEL), // Experimental
-		// AsClientOption(NewGRPCClientOptionOTELStats),
+		// AsClientOption(NewGRPCClientOptionOTEL), // Experimental
+		AsClientOption(NewGRPCClientOptionOTELStats),
 		// AsClientOption(NewGRPCClientOptionStats),
 		AsClientOption(NewGRPCClientOptionKeepAliveParams),
 		AsClientOption(NewGRPCClientOptionCredentials),
