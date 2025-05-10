@@ -12,22 +12,9 @@ import (
 	"github.com/enesanbar/go-service/wiring"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/propagation"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
-
-type RabbitMQConsumerParams struct {
-	fx.In
-
-	Logger          log.Factory
-	Queues          map[string]*rabbitmq.Queue
-	Channels        map[string]*rabbitmq.Channel
-	MessageHandlers map[string]MessageHandler
-	Propagator      propagation.TextMapPropagator
-	TracerProvider  *tracesdk.TracerProvider
-}
 
 type RabbitMQQueueConsumer struct {
 	logger          log.Factory
@@ -42,7 +29,7 @@ type RabbitMQQueueConsumer struct {
 
 // NewRabbitMQConsumer creates a pointer to the new instance of the RabbitMQQueueConsumer
 // and a runnable group that can be used to start and stop the consumer
-func NewRabbitMQConsumer(p RabbitMQConsumerParams) (wiring.RunnableGroup, *RabbitMQQueueConsumer) {
+func NewRabbitMQConsumer(p RabbitMQConsumersParams) (wiring.RunnableGroup, *RabbitMQQueueConsumer) {
 	consumer := &RabbitMQQueueConsumer{
 		logger:          p.Logger,
 		MessageHandlers: p.MessageHandlers,

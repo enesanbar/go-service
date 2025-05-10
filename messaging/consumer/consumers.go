@@ -13,7 +13,6 @@ import (
 type RabbitMQConsumersParams struct {
 	fx.In
 
-	QueueName       string
 	Conf            config.Config
 	Logger          log.Factory
 	Queues          map[string]*rabbitmq.Queue
@@ -23,8 +22,8 @@ type RabbitMQConsumersParams struct {
 	TracerProvider  *tracesdk.TracerProvider
 }
 
-func RabbitMQConsumerFactory(p RabbitMQConsumersParams) (wiring.RunnableGroup, error) {
-	runnable, consumer := NewRabbitMQConsumer(RabbitMQConsumerParams{
+func RabbitMQConsumerFactory(queueName string, p RabbitMQConsumersParams) (wiring.RunnableGroup, error) {
+	runnable, consumer := NewRabbitMQConsumer(RabbitMQConsumersParams{
 		Logger:          p.Logger,
 		Queues:          p.Queues,
 		Channels:        p.Channels,
@@ -32,6 +31,6 @@ func RabbitMQConsumerFactory(p RabbitMQConsumersParams) (wiring.RunnableGroup, e
 		Propagator:      p.Propagator,
 		TracerProvider:  p.TracerProvider,
 	})
-	consumer.SetQueue(p.QueueName)
+	consumer.SetQueue(queueName)
 	return runnable, nil
 }
