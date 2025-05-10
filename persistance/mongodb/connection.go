@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/instana/go-sensor/instrumentation/instamongo"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.opentelemetry.io/otel/sdk/trace"
 
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/enesanbar/go-service/log"
-	instana "github.com/instana/go-sensor"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
@@ -20,14 +18,12 @@ import (
 
 type Connector struct {
 	logger         log.Factory
-	sensor         *instana.Sensor
 	tracerProvider *trace.TracerProvider
 }
 
 type ConnectionParams struct {
 	fx.In
 
-	Sensor         *instana.Sensor `optional:"true"`
 	Logger         log.Factory
 	TracerProvider *trace.TracerProvider `optional:"true"`
 }
@@ -35,7 +31,6 @@ type ConnectionParams struct {
 func NewConnector(p ConnectionParams) (*Connector, error) {
 	return &Connector{
 		logger:         p.Logger,
-		sensor:         p.Sensor,
 		tracerProvider: p.TracerProvider,
 	}, nil
 }
@@ -76,16 +71,7 @@ func (c *Connector) Connect(cfg *Config) (*mongo.Client, error) {
 	var client *mongo.Client
 	var err error
 
-	if c.sensor != nil {
-		client, err = instamongo.Connect(
-			ctx,
-			c.sensor,
-			options.Client().ApplyURI(DSN),
-			clientOptions,
-		)
-	} else {
-		client, err = mongo.Connect(ctx, options.Client().ApplyURI(DSN), clientOptions)
-	}
+	client, err = mongo.Connect(ctx, options.Client().ApplyURI(DSN), clientOptions)
 
 	if err != nil {
 		return nil, err

@@ -36,7 +36,6 @@ func New(name string) Builder {
 
 	return Builder{
 		Provide: []interface{}{
-			instrumentation.NewInstanaSensor,
 			instrumentation.NewTelemetryServer,
 			instrumentation.NewTelemetryServerConfig,
 			log.NewZapLogger,
