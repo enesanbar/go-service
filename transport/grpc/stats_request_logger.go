@@ -16,33 +16,33 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// LoggerStatsHandler implements [stats.LoggerStatsHandler](https://pkg.go.dev/google.golang.org/grpc/stats#LoggerStatsHandler) interface.
-type LoggerStatsHandler struct {
+// RequestLoggerStatsHandler implements [stats.RequestLoggerStatsHandler](https://pkg.go.dev/google.golang.org/grpc/stats#RequestLoggerStatsHandler) interface.
+type RequestLoggerStatsHandler struct {
 	logger log.Factory
 }
 
-func NewStatsHandler(logger log.Factory) *LoggerStatsHandler {
-	return &LoggerStatsHandler{
+func NewRequestLoggerStatsHandler(logger log.Factory) *RequestLoggerStatsHandler {
+	return &RequestLoggerStatsHandler{
 		logger: logger,
 	}
 }
 
 type connStatCtxKey struct{}
 
-func (st *LoggerStatsHandler) TagConn(ctx context.Context, stat *stats.ConnTagInfo) context.Context {
+func (st *RequestLoggerStatsHandler) TagConn(ctx context.Context, stat *stats.ConnTagInfo) context.Context {
 	return context.WithValue(ctx, connStatCtxKey{}, stat)
 }
 
-func (st *LoggerStatsHandler) HandleConn(ctx context.Context, stat stats.ConnStats) {
+func (st *RequestLoggerStatsHandler) HandleConn(ctx context.Context, stat stats.ConnStats) {
 }
 
 type rpcStatCtxKey struct{}
 
-func (st *LoggerStatsHandler) TagRPC(ctx context.Context, stat *stats.RPCTagInfo) context.Context {
+func (st *RequestLoggerStatsHandler) TagRPC(ctx context.Context, stat *stats.RPCTagInfo) context.Context {
 	return context.WithValue(ctx, rpcStatCtxKey{}, stat)
 }
 
-func (st *LoggerStatsHandler) HandleRPC(ctx context.Context, stat stats.RPCStats) {
+func (st *RequestLoggerStatsHandler) HandleRPC(ctx context.Context, stat stats.RPCStats) {
 	var sMethod string
 	if s, ok := ctx.Value(rpcStatCtxKey{}).(*stats.RPCTagInfo); ok {
 		sMethod = filepath.Base(s.FullMethodName)

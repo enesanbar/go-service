@@ -3,6 +3,8 @@ package errors
 import (
 	"bytes"
 	"fmt"
+
+	"google.golang.org/grpc/status"
 )
 
 type Error struct {
@@ -20,6 +22,29 @@ type Error struct {
 
 	// Data returns an arbitrary data related to error, e.g. validation error
 	Data interface{}
+}
+
+// NewError creates a new error with the given code, message, and operation.
+func NewError(code, message, op string, err error) Error {
+	return Error{
+		Code:    code,
+		Message: message,
+		Op:      op,
+		Err:     err,
+	}
+}
+
+// SetData sets the data field of the error.
+func (e *Error) SetData(data interface{}) {
+	e.Data = data
+}
+
+func (e *Error) GRPCStatus() *status.Status {
+	if e.Code == "" {
+		return nil
+	}
+
+	return status.New(ErrorStatusGRPC(e), ErrorMessage(e))
 }
 
 // Error returns detailed error message for developer to debug

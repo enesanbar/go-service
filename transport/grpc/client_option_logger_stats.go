@@ -9,10 +9,9 @@ import (
 type GRPCClientOptionStatsLoggerParams struct {
 	fx.In
 
-	StatsHandler *LoggerStatsHandler
+	RequestLoggerStatsHandler *RequestLoggerStatsHandler
 }
 
 func NewGRPCClientOptionLoggerStats(p GRPCClientOptionStatsLoggerParams) grpc.DialOption {
-	// TODO: provide stats on debug mode
-	return grpc.WithStatsHandler(p.StatsHandler)
+	return grpc.WithStatsHandler(p.RequestLoggerStatsHandler)
 }

@@ -51,6 +51,6 @@ func (bh *BaseHandler) NewError(c echo.Context, err error) error {
 	bh.logger.For(c.Request().Context()).Error("", zap.Error(err))
 
 	var response ApiResponse
-	response = NewApiResponse(errors.ErrorStatus(err), errors.ErrorData(err), routeError)
+	response = NewApiResponse(errors.ErrorStatusHTTP(err), errors.ErrorData(err), routeError)
 	return c.JSON(response.Status, response)
 }

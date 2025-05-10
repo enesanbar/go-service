@@ -1,6 +1,10 @@
 package errors
 
-import "net/http"
+import (
+	"net/http"
+
+	"google.golang.org/grpc/codes"
+)
 
 // transport-agnostic error types, cli, rest, gprc, graphql.
 // at least one code should be provided in the error in the chain of errors
@@ -13,12 +17,22 @@ const (
 	ENOTMODIFIED = "not_modified" // unauthorized
 )
 
-// CodeMap is a map of go-service errors and http status codes.
-var CodeMap = map[string]int{
+// CodeMapHTTP is a map of go-service errors and http status codes.
+var CodeMapHTTP = map[string]int{
 	ECONFLICT:    http.StatusConflict,
 	EINVALID:     http.StatusBadRequest,
 	ENOTFOUND:    http.StatusNotFound,
 	EINTERNAL:    http.StatusInternalServerError,
 	EFORBIDDEN:   http.StatusForbidden,
 	ENOTMODIFIED: http.StatusNotModified,
+}
+
+// CodeMapGRPC is a map of go-service errors and grpc status codes.
+var CodeMapGRPC = map[string]codes.Code{
+	ECONFLICT:    codes.FailedPrecondition,
+	EINVALID:     codes.InvalidArgument,
+	ENOTFOUND:    codes.NotFound,
+	EINTERNAL:    codes.Internal,
+	EFORBIDDEN:   codes.PermissionDenied,
+	ENOTMODIFIED: codes.OK,
 }
