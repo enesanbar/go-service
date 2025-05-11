@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/log"
 )
 
 const (

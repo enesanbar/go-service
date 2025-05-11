@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/enesanbar/go-service/errors"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )

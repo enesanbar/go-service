@@ -3,8 +3,8 @@ package router
 import (
 	"net/http"
 
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.uber.org/fx"

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/enesanbar/go-service/info"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/info"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc/stats"
@@ -82,7 +82,7 @@ func (st *RequestLoggerStatsHandler) HandleRPC(ctx context.Context, stat stats.R
 		logPayload("response", s.Payload)
 	case *stats.End:
 		fields := []zap.Field{
-			zap.String("service", sMethod),
+			zap.String("service", info.ServiceName),
 			zap.String("method", sMethod),
 		}
 

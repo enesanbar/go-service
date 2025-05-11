@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 
-	"github.com/enesanbar/go-service/healthchecker"
-	"github.com/enesanbar/go-service/info"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/healthchecker"
+	"github.com/enesanbar/go-service/core/info"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc/health"

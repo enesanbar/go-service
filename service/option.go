@@ -1,12 +1,12 @@
 package service
 
 import (
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/healthchecker"
-	"github.com/enesanbar/go-service/info"
-	"github.com/enesanbar/go-service/instrumentation"
-	"github.com/enesanbar/go-service/instrumentation/otel"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/healthchecker"
+	"github.com/enesanbar/go-service/core/info"
+	"github.com/enesanbar/go-service/core/instrumentation/otel"
+	"github.com/enesanbar/go-service/core/instrumentation/prometheus"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/enesanbar/go-service/messaging/consumer"
 	"github.com/enesanbar/go-service/messaging/producer"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
@@ -105,13 +105,12 @@ func NewApp(name string, opts ...Option) *fx.App {
 
 	cfg := &AppConfig{
 		provides: []interface{}{
-			instrumentation.NewTelemetryServer,
-			instrumentation.NewTelemetryServerConfig,
 			log.NewZapLogger,
 			log.NewFactory,
 		},
 		options: []fx.Option{
 			otel.Module,
+			prometheus.Module,
 			config.Module,
 			healthchecker.Module,
 			fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {

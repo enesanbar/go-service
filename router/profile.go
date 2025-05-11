@@ -6,10 +6,10 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/wiring"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/wiring"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 )
 
 type ProfileServer struct {

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/XSAM/otelsql"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/zap"
 )
 

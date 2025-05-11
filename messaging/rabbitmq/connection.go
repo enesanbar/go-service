@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/fx"
 	"go.uber.org/zap"

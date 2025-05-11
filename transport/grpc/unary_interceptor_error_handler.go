@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/enesanbar/go-service/errors"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

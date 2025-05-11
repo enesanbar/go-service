@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/wiring"
 	"github.com/enesanbar/go-service/messaging/messages"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
-	"github.com/enesanbar/go-service/wiring"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"

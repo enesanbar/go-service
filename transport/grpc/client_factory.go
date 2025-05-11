@@ -3,8 +3,8 @@ package grpc
 import (
 	"fmt"
 
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 

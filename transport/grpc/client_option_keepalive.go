@@ -3,7 +3,7 @@ package grpc
 import (
 	"time"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/fx"
 
 	"google.golang.org/grpc"

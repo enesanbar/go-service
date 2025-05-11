@@ -7,7 +7,7 @@ import (
 	"github.com/patrickmn/go-cache"
 
 	"github.com/enesanbar/go-service/cache/metrics"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 )
 
 var ErrKeyNotFound = errors.New("'key' not found in cache")

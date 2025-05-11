@@ -5,7 +5,6 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/enesanbar/go-service/instrumentation"
 	"github.com/enesanbar/go-service/router/middlewares"
 )
 
@@ -20,7 +19,6 @@ var factories = fx.Provide(
 	NewHealthCheckHandler,
 	NewEchoRouter,
 	NewProfileServer,
-	instrumentation.NewPrometheusService,
 )
 
 var interfaceTypes = fx.Provide(

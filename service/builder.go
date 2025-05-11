@@ -1,12 +1,12 @@
 package service
 
 import (
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/healthchecker"
-	"github.com/enesanbar/go-service/info"
-	"github.com/enesanbar/go-service/instrumentation"
-	"github.com/enesanbar/go-service/instrumentation/otel"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/healthchecker"
+	"github.com/enesanbar/go-service/core/info"
+	"github.com/enesanbar/go-service/core/instrumentation/otel"
+	"github.com/enesanbar/go-service/core/instrumentation/prometheus"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/enesanbar/go-service/messaging/consumer"
 	"github.com/enesanbar/go-service/messaging/producer"
 	"github.com/enesanbar/go-service/messaging/rabbitmq"
@@ -31,13 +31,13 @@ type Service struct {
 }
 
 // New creates a new instance of the Builder type
+//
+// Deprecated: use NewApp instead
 func New(name string) Builder {
 	info.ServiceName = name
 
 	return Builder{
 		Provide: []interface{}{
-			instrumentation.NewTelemetryServer,
-			instrumentation.NewTelemetryServerConfig,
 			log.NewZapLogger,
 			log.NewFactory,
 		},
@@ -47,6 +47,7 @@ func New(name string) Builder {
 		Options: []fx.Option{
 			validation.Module,
 			otel.Module,
+			prometheus.Module,
 			config.Module,
 			healthchecker.Module,
 			fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {

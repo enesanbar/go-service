@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/sony/gobreaker"
 	"go.uber.org/fx"
 

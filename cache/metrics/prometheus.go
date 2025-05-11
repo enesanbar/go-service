@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/enesanbar/go-service/info"
+	"github.com/enesanbar/go-service/core/info"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

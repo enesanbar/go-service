@@ -3,8 +3,8 @@ package router
 import (
 	"net/http"
 
-	"github.com/enesanbar/go-service/healthchecker"
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/healthchecker"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )

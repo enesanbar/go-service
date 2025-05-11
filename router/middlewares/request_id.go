@@ -3,7 +3,7 @@ package middlewares
 import (
 	"context"
 
-	"github.com/enesanbar/go-service/utils"
+	"github.com/enesanbar/go-service/core/utils"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/random"

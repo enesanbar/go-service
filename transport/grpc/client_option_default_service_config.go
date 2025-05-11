@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/enesanbar/go-service/config"
+	"github.com/enesanbar/go-service/core/config"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
 )

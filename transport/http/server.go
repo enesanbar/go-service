@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/enesanbar/go-service/log"
-	"github.com/enesanbar/go-service/wiring"
+	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/wiring"
 )
 
 type HttpServer struct {
