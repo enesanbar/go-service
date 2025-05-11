@@ -1,9 +1,9 @@
-package instrumentation
+package prometheus
 
 import (
 	"fmt"
 
-	"github.com/enesanbar/go-service/config"
+	"github.com/enesanbar/go-service/core/config"
 )
 
 const (

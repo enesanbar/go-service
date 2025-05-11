@@ -4,6 +4,9 @@ import (
 	"context"
 )
 
+// HealthCheckerProbe is an interface that defines a health check probe.
+// It should be implemented by applications that want to perform health checks and
+// provided to fx as a dependency with AsHealthCheckerProbe(NewChecker),
 type HealthCheckerProbe interface {
 	Name() string
 	Check(ctx context.Context) *HealthCheckerProbeResult

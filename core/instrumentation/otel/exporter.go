@@ -3,7 +3,7 @@ package otel
 import (
 	"context"
 
-	"github.com/enesanbar/go-service/osutil"
+	"github.com/enesanbar/go-service/core/osutil"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"

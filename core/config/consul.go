@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 
-	"github.com/enesanbar/go-service/info"
-	"github.com/enesanbar/go-service/log"
-	"github.com/enesanbar/go-service/osutil"
+	"github.com/enesanbar/go-service/core/info"
+	"github.com/enesanbar/go-service/core/osutil"
+	"github.com/enesanbar/go-service/core/log"
 
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"

@@ -1,7 +1,7 @@
 package otel
 
 import (
-	"github.com/enesanbar/go-service/info"
+	"github.com/enesanbar/go-service/core/info"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"

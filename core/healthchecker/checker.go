@@ -7,6 +7,8 @@ type HealthCheckerResult struct {
 	ProbesResults map[string]*HealthCheckerProbeResult `json:"probes"`
 }
 
+// HealthChecker runs a set of health checks provided by the application developer and returns the results.
+// If any of the checks fail, the overall result is considered a failure.
 type HealthChecker struct {
 	probes []HealthCheckerProbe
 }

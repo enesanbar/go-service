@@ -1,7 +1,6 @@
 package otel
 
 import (
-	"github.com/enesanbar/go-service/router/middlewares"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
 )
@@ -45,6 +44,5 @@ var factories = fx.Options(
 		NewTracerProvider,
 		NewPropagator,
 		NewMeterProvider,
-		middlewares.AsMiddleware(NewOtelMiddleware),
 	),
 )

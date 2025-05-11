@@ -1,4 +1,4 @@
-package instrumentation
+package prometheus
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/enesanbar/go-service/config"
-	"github.com/enesanbar/go-service/wiring"
+	"github.com/enesanbar/go-service/core/config"
+	"github.com/enesanbar/go-service/core/wiring"
 
-	"github.com/enesanbar/go-service/log"
+	"github.com/enesanbar/go-service/core/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

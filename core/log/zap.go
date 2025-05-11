@@ -1,11 +1,11 @@
 package log
 
 import (
-	"github.com/enesanbar/go-service/osutil"
+	"github.com/enesanbar/go-service/core/osutil"
 
 	"go.uber.org/fx"
 
-	"github.com/enesanbar/go-service/info"
+	"github.com/enesanbar/go-service/core/info"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

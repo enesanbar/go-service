@@ -3,7 +3,7 @@ package log
 import (
 	"context"
 
-	"github.com/enesanbar/go-service/utils"
+	"github.com/enesanbar/go-service/core/utils"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

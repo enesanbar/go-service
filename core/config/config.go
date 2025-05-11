@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/enesanbar/go-service/osutil"
+	"github.com/enesanbar/go-service/core/osutil"
 	"go.uber.org/fx"
 )
 

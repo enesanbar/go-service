@@ -2,12 +2,10 @@ package utils
 
 import (
 	"context"
-
-	"github.com/labstack/echo/v4"
 )
 
 var (
-	ContextKeyRequestID = NewContextKey(echo.HeaderXRequestID)
+	ContextKeyRequestID = NewContextKey("X-Request-Id")
 	ContextKeyUsername  = NewContextKey("username")
 )
 
