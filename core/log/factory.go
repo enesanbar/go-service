@@ -41,7 +41,7 @@ func (b Factory) For(ctx context.Context) Logger {
 		logger.spanFields = []zapcore.Field{
 			zap.String("trace_id", span.SpanContext().TraceID().String()),
 			zap.String("span_id", span.SpanContext().SpanID().String()),
-			zap.Any("context", span.SpanContext()), // debugging purposes
+			// zap.Any("context", span.SpanContext()), // debugging purposes
 		}
 
 		return logger
