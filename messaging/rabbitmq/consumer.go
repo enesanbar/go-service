@@ -1,4 +1,4 @@
-package consumer
+package rabbitmq
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/messaging/consumer"
+	"github.com/enesanbar/go-service/core/messaging/messages"
 	"github.com/enesanbar/go-service/core/wiring"
-	"github.com/enesanbar/go-service/messaging/messages"
-	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -18,11 +18,11 @@ import (
 
 type RabbitMQQueueConsumer struct {
 	logger          log.Factory
-	Channel         *rabbitmq.Channel
-	Queue           *rabbitmq.Queue
-	Channels        map[string]*rabbitmq.Channel
-	Queues          map[string]*rabbitmq.Queue
-	MessageHandlers map[string]MessageHandler
+	Channel         *Channel
+	Queue           *Queue
+	Channels        map[string]*Channel
+	Queues          map[string]*Queue
+	MessageHandlers map[string]consumer.MessageHandler
 	Propagator      propagation.TextMapPropagator
 	Tracer          trace.Tracer
 }
@@ -135,7 +135,7 @@ func (h *RabbitMQQueueConsumer) Start() error {
 
 				err = handler.Handle(ctx, message)
 				if err != nil {
-					h.logger.Bg().With(zap.Error(err)).Error("failed to handle message")
+					h.logger.For(ctx).With(zap.Error(err)).Error("failed to handle message")
 				}
 			}(d)
 		}

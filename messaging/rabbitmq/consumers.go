@@ -1,10 +1,10 @@
-package consumer
+package rabbitmq
 
 import (
 	"github.com/enesanbar/go-service/core/config"
 	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/messaging/consumer"
 	"github.com/enesanbar/go-service/core/wiring"
-	"github.com/enesanbar/go-service/messaging/rabbitmq"
 	"go.opentelemetry.io/otel/propagation"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
@@ -15,9 +15,9 @@ type RabbitMQConsumersParams struct {
 
 	Conf            config.Config
 	Logger          log.Factory
-	Queues          map[string]*rabbitmq.Queue
-	Channels        map[string]*rabbitmq.Channel
-	MessageHandlers map[string]MessageHandler
+	Queues          map[string]*Queue
+	Channels        map[string]*Channel
+	MessageHandlers map[string]consumer.MessageHandler
 	Propagator      propagation.TextMapPropagator
 	TracerProvider  *tracesdk.TracerProvider
 }

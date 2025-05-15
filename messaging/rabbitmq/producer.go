@@ -1,4 +1,4 @@
-package producer
+package rabbitmq
 
 import (
 	"context"
@@ -8,8 +8,7 @@ import (
 
 	"github.com/enesanbar/go-service/core/info"
 	"github.com/enesanbar/go-service/core/log"
-	"github.com/enesanbar/go-service/messaging/messages"
-	"github.com/enesanbar/go-service/messaging/rabbitmq"
+	"github.com/enesanbar/go-service/core/messaging/messages"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -17,11 +16,10 @@ import (
 	"go.uber.org/fx"
 )
 
-// TODO: Move this to a common package
 type RabbitMQProducer struct {
 	Logger     log.Factory
-	Channel    *rabbitmq.Channel
-	Channels   map[string]*rabbitmq.Channel
+	Channel    *Channel
+	Channels   map[string]*Channel
 	Propagator propagation.TextMapPropagator
 }
 
@@ -29,7 +27,7 @@ type RabbitMQProducerParams struct {
 	fx.In
 
 	Logger     log.Factory
-	Channels   map[string]*rabbitmq.Channel
+	Channels   map[string]*Channel
 	Propagator propagation.TextMapPropagator
 }
 
