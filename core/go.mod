@@ -7,7 +7,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/prometheus/client_golang v1.22.0
-	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/viper v1.20.1
 	github.com/spf13/viper/remote v1.20.1
 	go.opentelemetry.io/otel v1.35.0

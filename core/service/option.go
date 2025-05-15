@@ -15,6 +15,13 @@ import (
 	"go.uber.org/zap"
 )
 
+type Service struct {
+	Name         string
+	Dependencies fx.Option
+	Constructor  interface{}
+	InvokeFunc   interface{}
+}
+
 type AppConfig struct {
 	provides []interface{}
 	invokes  []fx.Option
@@ -60,14 +67,7 @@ func WithService(service Service) Option {
 	}
 }
 
-// func WithRabbitMQ(options ...fx.Option) Option {
-// 	return func(cfg *AppConfig) {
-// 		cfg.options = append(cfg.options, rabbitmq.Module, producer.Module)
-// 		cfg.options = append(cfg.options, options...)
-// 	}
-// }
-
-func NewApp(name string, opts ...Option) *fx.App {
+func New(name string, opts ...Option) *fx.App {
 	info.ServiceName = name
 
 	cfg := &AppConfig{
