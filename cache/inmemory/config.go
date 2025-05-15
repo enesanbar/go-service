@@ -9,8 +9,11 @@ import (
 )
 
 const (
-	PropertyExpiration      = "default-expiration"
-	PropertyCleanupInterval = "default-expiration"
+	ExpirationKey     = "default-expiration"
+	ExpirationDefault = 5
+
+	CleanupIntervalKey     = "default-expiration"
+	CleanupIntervalDefault = 10
 )
 
 type Config struct {
@@ -18,20 +21,21 @@ type Config struct {
 	CleanupInterval time.Duration
 }
 
-func New(cfg config.Config, logger log.Factory, prefix string) (*Config, error) {
+func NewConfig(cfg config.Config, logger log.Factory) (*Config, error) {
+	prefix := "cache.inmemory"
 	keyTemplate := "%s.%s"
-	property := fmt.Sprintf(keyTemplate, prefix, PropertyExpiration)
+	property := fmt.Sprintf(keyTemplate, prefix, ExpirationKey)
 
 	expiration := cfg.GetInt(property)
 	if expiration == 0 {
-		return nil, config.NewMissingPropertyError(property)
+		expiration = ExpirationDefault
 	}
 
-	property = fmt.Sprintf(keyTemplate, prefix, PropertyCleanupInterval)
+	property = fmt.Sprintf(keyTemplate, prefix, CleanupIntervalKey)
 
 	cleanupInterval := cfg.GetInt(property)
 	if cleanupInterval == 0 {
-		panic(fmt.Sprintf("please set '%s.%s' in consul", prefix, property))
+		cleanupInterval = CleanupIntervalDefault
 	}
 
 	return &Config{
