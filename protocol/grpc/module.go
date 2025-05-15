@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"github.com/enesanbar/go-service/core/service"
 	"go.uber.org/fx"
 )
 
@@ -43,4 +44,11 @@ func AsClientOption(p any) any {
 		p,
 		fx.ResultTags(`group:"grpc-client-options"`),
 	)
+}
+
+func Option(options ...fx.Option) service.Option {
+	return func(cfg *service.AppConfig) {
+		cfg.Options = append(cfg.Options, Module)
+		cfg.Options = append(cfg.Options, options...)
+	}
 }

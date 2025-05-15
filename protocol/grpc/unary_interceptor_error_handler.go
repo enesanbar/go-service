@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 
-	"github.com/enesanbar/go-service/errors"
+	"github.com/enesanbar/go-service/core/errors"
 	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func NewGRPCServerOptionUnaryInterceptorErrorHandler(p GRPCServerOptionUnaryInte
 		if err != nil {
 			// st, _ := status.FromError(err)
 			// return m, st.Err()
-			code := errors.ErrorStatusGRPC(err)
+			code := ErrorStatus(err)
 			message := errors.ErrorMessage(err)
 			// data := customErr.ErrorData(err)
 			p.Logger.For(ctx).With(zap.Error(err)).Error("gRPC unary interceptor error")
