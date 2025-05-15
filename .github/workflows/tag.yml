@@ -1,0 +1,91 @@
+name: Tag Go Modules
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag-modules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to get full history for conventional commits
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install semtag
+        shell: bash
+        run: |
+          curl -o semtag -L https://raw.githubusercontent.com/nico2sh/semtag/refs/heads/master/semtag
+
+      - name: Get changed modules
+        id: changed-modules
+        run: |
+          # Get list of changed files since last commit
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          # CHANGED_FILES=$(git diff --name-only)  # to test it with act
+          echo "Changed files: $CHANGED_FILES"
+          
+          # Find all go.mod files in the repo
+          ALL_MODULES=$(find . -name go.mod | sed 's|/go.mod||')
+          echo "All modules: $ALL_MODULES"
+          # Determine which modules have changes
+          CHANGED_MODULES=""
+          for module in $ALL_MODULES; do
+            for file in $CHANGED_FILES; do
+              if [[ "./$file" == "$module"* ]]; then
+                CHANGED_MODULES="$CHANGED_MODULES $module"
+                break
+              fi
+            done
+          done
+          echo "Changed modules: $CHANGED_MODULES"
+          # Output the result
+          echo "changed_modules=${CHANGED_MODULES}" >> $GITHUB_OUTPUT
+
+      - name: Tag changed modules
+        if: steps.changed-modules.outputs.changed_modules != ''
+        run: |
+          for module in ${{ steps.changed-modules.outputs.changed_modules }}; do
+            echo "Processing module: $module"
+            
+            # Get module path (remove leading ./)
+            module_path=$(echo "$module" | sed 's|^./||')
+            
+            # Get current version
+            CURRENT_TAG=$(git describe --tags --match "$module_path/v*" --abbrev=0 2>/dev/null || echo "")
+            
+            if [ -z "$CURRENT_TAG" ]; then
+              echo "No existing tag found for $module_path, starting with v0.0.1"
+              NEW_TAG="$module_path/v0.0.1"
+            else
+              # Determine version bump based on conventional commits
+              # Using semtag (https://github.com/nico2sh/semtag)
+              BUMP_LEVEL=$(./semtag final -path $module -dry -sort semver -guess -verbosity info | grep "Suggested bump" | awk '{print $3}')
+              
+              # Extract current version
+              CURRENT_VERSION=$(echo "$CURRENT_TAG" | sed "s|^$module_path/v||")
+              
+              # Bump version
+              NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v bump="$BUMP_LEVEL" '{
+                if (bump == "major") { $1++; $2=0; $3=0 }
+                else if (bump == "minor") { $2++; $3=0 }
+                else if (bump == "patch") { $3++ }
+                else { $3++ }  # Default to patch if unknown
+                print $1"."$2"."$3
+              }')
+              
+              NEW_TAG="$module_path/v$NEW_VERSION"
+              echo "Bumping $CURRENT_TAG to $NEW_TAG based on $BUMP_LEVEL changes"
+            fi
+            
+            # Create and push the new tag
+            echo "Creating tag: $NEW_TAG"
+            git tag -a "$NEW_TAG" -m "$NEW_TAG"
+            git push origin "$NEW_TAG"
+          done
