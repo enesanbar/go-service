@@ -1,6 +1,7 @@
 package wiring
 
 import (
+	"context"
 	"go.uber.org/fx"
 )
 
@@ -13,6 +14,6 @@ type RunnableGroup struct {
 }
 
 type Runnable interface {
-	Start() error
-	Stop() error
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
 }
