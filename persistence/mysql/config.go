@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	PropertyName                  = "name"
 	PropertyDatabase              = "database"
 	PropertyHost                  = "host"
 	PropertyPort                  = "port"
@@ -44,19 +43,22 @@ type Config struct {
 }
 
 func NewConfig(cfg config.Config, name string) (*Config, error) {
-	keyTemplate := "datasources.mysql.%s.%s"
+	keyTemplate := "mysql.%s.%s"
 
 	host := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyHost))
 	if host == "" {
 		host = DefaultHost
 	}
 
-	port := cfg.GetInt(fmt.Sprintf(keyTemplate, name, "port"))
+	port := cfg.GetInt(fmt.Sprintf(keyTemplate, name, PropertyPort))
 	if port == 0 {
 		port = DefaultPort
 	}
 
 	database := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyDatabase))
+	if database == "" {
+		return nil, config.NewMissingPropertyError(fmt.Sprintf(keyTemplate, name, PropertyDatabase))
+	}
 	username := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyUsername))
 	password := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyPassword))
 

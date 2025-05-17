@@ -1,13 +1,14 @@
 package rabbitmq
 
 import (
+	"errors"
 	"github.com/enesanbar/go-service/core/config"
 	"github.com/enesanbar/go-service/core/log"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
-type RabbitMQChannelsParams struct {
+type ChannelsParams struct {
 	fx.In
 
 	Conf        config.Config
@@ -15,12 +16,13 @@ type RabbitMQChannelsParams struct {
 	Connections map[string]*Connection `optional:"true"`
 }
 
-func RabbitMQChannels(p RabbitMQChannelsParams) (map[string]*Channel, error) {
+// Channels return a map of channels configured in the configuration file.
+func Channels(p ChannelsParams) (map[string]*Channel, error) {
 	if len(p.Connections) == 0 {
-		return nil, nil
+		return nil, errors.New("no connections found. please check the connection configuration in your configuration")
 	}
 
-	cfg := p.Conf.GetStringMap("datasources.rabbitmq.channels")
+	cfg := p.Conf.GetStringMap("rabbitmq.channels")
 
 	channels := make(map[string]*Channel)
 	for channelName, v := range cfg {
@@ -39,6 +41,7 @@ func RabbitMQChannels(p RabbitMQChannelsParams) (map[string]*Channel, error) {
 				Name:       channelName,
 				Connection: connection,
 			},
+			AppStopSignal: make(chan struct{}),
 		}
 		channel.connect()
 		channels[channelName] = channel

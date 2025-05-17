@@ -2,7 +2,9 @@ package rest
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -10,15 +12,15 @@ import (
 	"github.com/enesanbar/go-service/core/wiring"
 )
 
-type HttpServer struct {
+type Server struct {
 	logger log.Factory
 	server *http.Server
 	cfg    *ServerConfig
 }
 
-// New creates a pointer to the new instance of the HttpServer
-func New(router http.Handler, logger log.Factory, cfg *ServerConfig) (wiring.RunnableGroup, *HttpServer) {
-	server := &HttpServer{
+// New creates a pointer to the new instance of the Server
+func New(router http.Handler, logger log.Factory, cfg *ServerConfig) (wiring.RunnableGroup, *Server) {
+	server := &Server{
 		server: &http.Server{
 			Addr:         fmt.Sprintf(":%d", cfg.Port),
 			Handler:      router,
@@ -33,23 +35,32 @@ func New(router http.Handler, logger log.Factory, cfg *ServerConfig) (wiring.Run
 	}, server
 }
 
-func (h HttpServer) Start() error {
-	h.logger.Bg().Infof("starting HTTP Server on %d", h.cfg.Port)
-	return h.server.ListenAndServe()
+func (h *Server) Start(ctx context.Context) error {
+	h.logger.For(ctx).Infof("starting HTTP Server on %d", h.cfg.Port)
+	err := h.server.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		h.logger.For(ctx).With(zap.Error(err)).Error("failed to start HTTP server")
+		return err
+	}
+	return nil
 }
 
-func (h HttpServer) Stop() error {
+func (h *Server) Stop(ctx context.Context) error {
 	timer := time.AfterFunc(time.Duration(h.cfg.GracefulStopTimeoutSeconds)*time.Second, func() {
-		h.logger.Bg().Info("http server could not be stopped gracefully, forcing stop")
-		h.server.Close()
-		h.logger.Bg().Info("http server forced to stop")
+		h.logger.For(ctx).Info("http server could not be stopped gracefully, forcing stop")
+		err := h.server.Close()
+		if err != nil {
+			h.logger.For(ctx).With(zap.Error(err)).Error("error forcing http server to stop")
+		} else {
+			h.logger.For(ctx).Info("http server forced to stop")
+		}
 	})
 	defer timer.Stop()
 
-	h.logger.Bg().Info("gracefully stopping HTTP Server")
+	h.logger.For(ctx).Info("gracefully stopping HTTP Server")
 	if err := h.server.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("error shutting down Server (%w)", err)
 	}
-	h.logger.Bg().Info("HTTP server stopped gracefully")
+	h.logger.For(ctx).Info("HTTP server stopped gracefully")
 	return nil
 }

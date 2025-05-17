@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type RabbitMQExchangesParams struct {
+type ExchangesParams struct {
 	fx.In
 
 	Conf     config.Config
@@ -15,11 +15,12 @@ type RabbitMQExchangesParams struct {
 	Channels map[string]*Channel `optional:"true"`
 }
 
-func RabbitMQExchanges(p RabbitMQExchangesParams) (map[string]*Exchange, error) {
+// Exchanges create the exchanges defined in the configuration file.
+func Exchanges(p ExchangesParams) (map[string]*Exchange, error) {
 	if len(p.Channels) == 0 {
 		return nil, nil
 	}
-	cfg := p.Conf.GetStringMap("datasources.rabbitmq.exchanges")
+	cfg := p.Conf.GetStringMap("rabbitmq.exchanges")
 
 	exchanges := make(map[string]*Exchange)
 

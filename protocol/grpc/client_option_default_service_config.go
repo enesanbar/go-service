@@ -27,15 +27,15 @@ type ServiceConfig struct {
 	MethodConfig []MethodConfig `json:"methodConfig"`
 }
 
-// Params to inject Viper-based config
-type GRPCClientOptionFactoryParams struct {
+// ClientOptionFactoryParams contains the parameters for the client option factory.
+type ClientOptionFactoryParams struct {
 	fx.In
 
 	Config config.Config
 }
 
-// Provide this in fx.Module
-func NewGRPCClientOptionFactory(Config config.Config) func(serviceName string) grpc.DialOption {
+// NewClientOptionServiceConfigFactory returns a function that can be used to create a gRPC dial option for service config.
+func NewClientOptionServiceConfigFactory(Config config.Config) func(serviceName string) grpc.DialOption {
 	return func(serviceName string) grpc.DialOption {
 		configKey := fmt.Sprintf("client.grpc.%s.serviceConfig", serviceName)
 

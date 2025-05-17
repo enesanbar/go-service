@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type RabbitMQBindingsParams struct {
+type BindingsParams struct {
 	fx.In
 
 	Conf      config.Config
@@ -16,12 +16,13 @@ type RabbitMQBindingsParams struct {
 	Exchanges map[string]*Exchange `optinal:"true"`
 }
 
-func RabbitMQBindings(p RabbitMQBindingsParams) error {
+// Bindings creates the bindings defined in the configuration file.
+func Bindings(p BindingsParams) error {
 	if len(p.Queues) == 0 || len(p.Exchanges) == 0 {
 		return nil
 	}
 
-	cfg := p.Conf.GetSliceOfObjects("datasources.rabbitmq.bindings")
+	cfg := p.Conf.GetSliceOfObjects("rabbitmq.bindings")
 
 	for _, v := range cfg {
 		exchangeName := v.(map[string]interface{})[PropertyExchange].(string)

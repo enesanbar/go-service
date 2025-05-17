@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCClientFactoryParams struct {
+type ClientFactoryParams struct {
 	fx.In
 
 	Logger        log.Factory
@@ -19,16 +19,17 @@ type GRPCClientFactoryParams struct {
 	ClientOptions []grpc.DialOption `group:"grpc-client-options"`
 }
 
-type GRPCClientFactory struct {
+// ClientFactory is a factory for creating gRPC client connections.
+type ClientFactory struct {
 	logger log.Factory
 	config config.Config
 
 	ClientOptions []grpc.DialOption
 }
 
-func NewClientFactory(p GRPCClientFactoryParams) (*GRPCClientFactory, error) {
+func NewClientFactory(p ClientFactoryParams) (*ClientFactory, error) {
 
-	return &GRPCClientFactory{
+	return &ClientFactory{
 		logger:        p.Logger,
 		config:        p.Config,
 		ClientOptions: p.ClientOptions,
@@ -36,11 +37,11 @@ func NewClientFactory(p GRPCClientFactoryParams) (*GRPCClientFactory, error) {
 
 }
 
-func (c *GRPCClientFactory) NewClientConn(name string, options ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (c *ClientFactory) NewClientConn(name string, options ...grpc.DialOption) (*grpc.ClientConn, error) {
 	addr := c.config.GetString(fmt.Sprintf("client.grpc.%s.address", name))
 	c.ClientOptions = append(c.ClientOptions, options...)
-	c.ClientOptions = append(c.ClientOptions, grpc.WithDisableServiceConfig())            // Disables service config via TXT record
-	c.ClientOptions = append(c.ClientOptions, NewGRPCClientOptionFactory(c.config)(name)) // Adds custom service config
+	c.ClientOptions = append(c.ClientOptions, grpc.WithDisableServiceConfig())                     // Disables service config via TXT record
+	c.ClientOptions = append(c.ClientOptions, NewClientOptionServiceConfigFactory(c.config)(name)) // Adds custom service config
 	conn, err := grpc.NewClient(addr, c.ClientOptions...)
 
 	if err != nil {

@@ -11,10 +11,11 @@ import (
 )
 
 type Channel struct {
-	logger        log.Factory
-	Channel       *amqp.Channel
-	ConnCloseChan chan *amqp.Error
-	Config        *ChannelConfig
+	logger           log.Factory
+	Channel          *amqp.Channel
+	ChannelCloseChan chan *amqp.Error
+	Config           *ChannelConfig
+	AppStopSignal    chan struct{}
 }
 
 type ChannelParams struct {
@@ -26,8 +27,9 @@ type ChannelParams struct {
 
 func NewChannelConnector(p ChannelParams) (*Channel, error) {
 	return &Channel{
-		logger: p.Logger,
-		Config: p.Config,
+		logger:        p.Logger,
+		Config:        p.Config,
+		AppStopSignal: make(chan struct{}),
 	}, nil
 }
 
@@ -49,8 +51,8 @@ func (c *Channel) connect() {
 		Info("created channel to rabbitmq")
 
 	c.Channel = channel
-	c.ConnCloseChan = make(chan *amqp.Error)
-	c.Channel.NotifyClose(c.ConnCloseChan)
+	c.ChannelCloseChan = make(chan *amqp.Error)
+	c.Channel.NotifyClose(c.ChannelCloseChan)
 }
 
 func (c *Channel) Start(ctx context.Context) error {
@@ -58,39 +60,36 @@ func (c *Channel) Start(ctx context.Context) error {
 		With(zap.String("name", c.Config.Name)).
 		Info("starting channel watcher")
 	for {
-		if c.ConnCloseChan == nil {
+		if c.ChannelCloseChan == nil {
 			time.Sleep(5 * time.Second)
 		}
 
-		// if c.Config.Connection.Conn.IsClosed() {
-		// 	c.logger.Bg().
-		// 		With(zap.String("name", c.Config.Name)).
-		// 		With(zap.String("connection", c.Config.Connection.Config.Host)).
-		// 		Error("connection to RabbitMQ is not open yet, waiting for it to open")
-		// 	time.Sleep(5 * time.Second)
-		// 	continue
-		// }
-
 		select {
-		case err := <-c.ConnCloseChan:
+		case err := <-c.ChannelCloseChan:
 			c.logger.Bg().
 				With(zap.String("name", c.Config.Name)).
 				With(zap.String("db", c.Config.Connection.Name())).
 				With(zap.Error(err)).
 				Error("Channel closed, reconnecting")
 			if !c.Channel.IsClosed() {
-				c.Close(ctx)
+				return c.Close(ctx)
 			}
 			c.connect()
 			time.Sleep(5 * time.Second)
+		case <-c.AppStopSignal:
+			c.logger.For(ctx).Info("context done, stopping the channel watcher")
+			return nil
 		}
-
 	}
-	return nil
 }
 
 // Close closes the Channel to RabbitMQ
 func (c *Channel) Close(ctx context.Context) error {
+	c.AppStopSignal <- struct{}{}
+	if c.Config.Connection.Conn.IsClosed() || c.Channel.IsClosed() {
+		return nil
+	}
+
 	err := c.Channel.Close()
 	if err != nil {
 		return err

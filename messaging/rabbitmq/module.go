@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"fmt"
+	"github.com/enesanbar/go-service/core/wiring"
 
 	"github.com/enesanbar/go-service/core/messaging/consumer"
 	"github.com/enesanbar/go-service/core/messaging/producer"
@@ -17,11 +18,37 @@ type Params struct {
 
 var Module = fx.Module(
 	"rabbitmq",
-	fx.Provide(RabbitMQConnections),
-	fx.Provide(RabbitMQChannels),
-	fx.Provide(RabbitMQQueues),
-	fx.Provide(RabbitMQExchanges),
-	fx.Invoke(RabbitMQBindings),
+	fx.Provide(Connections),
+	fx.Provide(
+		fx.Annotate(
+			func(connections map[string]*Connection) []wiring.Connection {
+				result := make([]wiring.Connection, 0, len(connections))
+				for _, conn := range connections {
+					result = append(result, conn)
+				}
+				return result
+			},
+			fx.ResultTags(`group:"connection-group"`),
+		),
+	),
+
+	fx.Provide(Channels),
+	fx.Provide(
+		fx.Annotate(
+			func(channels map[string]*Channel) []wiring.Connection {
+				result := make([]wiring.Connection, 0, len(channels))
+				for _, conn := range channels {
+					result = append(result, conn)
+				}
+				return result
+			},
+			fx.ResultTags(`group:"connection-group"`),
+		),
+	),
+
+	fx.Provide(Queues),
+	fx.Provide(Exchanges),
+	fx.Invoke(Bindings),
 )
 
 func Option(options ...fx.Option) service.Option {
@@ -55,4 +82,10 @@ var ConsumerModule = fx.Module(
 		}
 		return handlersMap
 	}),
+	fx.Provide(
+		fx.Annotate(
+			Consumers,
+			fx.ResultTags(`group:"runnable-group"`),
+		),
+	),
 )

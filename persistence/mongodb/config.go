@@ -53,12 +53,12 @@ func NewConfig(cfg config.Config, prefix string) (*Config, error) {
 		Host:                  host,
 		Name:                  name,
 		ReplicaSetName:        rsName,
-		Timeout:               time.Duration(cfg.GetInt("datasources.mongo.default.timeout")) * time.Second,
+		Timeout:               time.Duration(cfg.GetInt("mongo.default.timeout")) * time.Second,
 		AuthDB:                authDB,
-		User:                  cfg.GetString("datasources.mongo.default.username"),
-		Pass:                  cfg.GetString("datasources.mongo.default.password"),
-		MaxConnectionIdletime: time.Duration(cfg.GetInt("datasources.mongo.default.max-conn-idle-time")) * time.Second,
-		MaxPoolSize:           uint64(cfg.GetInt("datasources.mongo.default.max-pool-size")),
-		MinPoolSize:           uint64(cfg.GetInt("datasources.mongo.default.min-pool-size")),
+		User:                  cfg.GetString("mongo.default.username"),
+		Pass:                  cfg.GetString("mongo.default.password"),
+		MaxConnectionIdletime: time.Duration(cfg.GetInt("mongo.default.max-conn-idle-time")) * time.Second,
+		MaxPoolSize:           uint64(cfg.GetInt("mongo.default.max-pool-size")),
+		MinPoolSize:           uint64(cfg.GetInt("mongo.default.min-pool-size")),
 	}, nil
 }

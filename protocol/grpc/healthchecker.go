@@ -16,14 +16,14 @@ import (
 type HealthCheckHandler struct {
 	healthChecker     *healthchecker.HealthChecker
 	logger            log.Factory
-	GRPCServer        *GRPCServer
+	GRPCServer        *Server
 	HealthCheckServer *health.Server
 }
 
 func NewHealthCheckHandler(
 	healthchecker *healthchecker.HealthChecker,
 	logger log.Factory,
-	grpcServer *GRPCServer,
+	grpcServer *Server,
 ) *HealthCheckHandler {
 	healthcheck := health.NewServer()
 	healthcheck.SetServingStatus(info.ServiceName, healthpb.HealthCheckResponse_SERVING)

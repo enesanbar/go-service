@@ -51,8 +51,9 @@ func (c *Connector) Connect(cfg *Config) (*mongo.Client, error) {
 		MaxConnIdleTime:        &cfg.MaxConnectionIdletime,
 	}
 
-	// TODO: make this optional/configurable
-	clientOptions.Monitor = otelmongo.NewMonitor(otelmongo.WithTracerProvider(c.tracerProvider))
+	if c.tracerProvider != nil {
+		clientOptions.Monitor = otelmongo.NewMonitor(otelmongo.WithTracerProvider(c.tracerProvider))
+	}
 
 	if cfg.ReplicaSetName != "" {
 		clientOptions.ReplicaSet = &cfg.ReplicaSetName
@@ -68,6 +69,7 @@ func (c *Connector) Connect(cfg *Config) (*mongo.Client, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
+
 	var client *mongo.Client
 	var err error
 

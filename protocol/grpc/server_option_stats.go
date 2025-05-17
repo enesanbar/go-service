@@ -7,7 +7,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCServerOptionLoggerStatsParams struct {
+// ServerOptionLoggerStatsParams holds the parameters for creating a gRPC server option for the request logger stats handler.
+type ServerOptionLoggerStatsParams struct {
 	fx.In
 
 	Logger                    log.Factory
@@ -15,6 +16,7 @@ type GRPCServerOptionLoggerStatsParams struct {
 	RequestLoggerStatsHandler *RequestLoggerStatsHandler
 }
 
-func NewGRPCServerOptionRequestLoggerStats(p GRPCServerOptionLoggerStatsParams) grpc.ServerOption {
+// NewServerOptionRequestLoggerStats creates a new gRPC server option for request logger stats.
+func NewServerOptionRequestLoggerStats(p ServerOptionLoggerStatsParams) grpc.ServerOption {
 	return grpc.StatsHandler(p.RequestLoggerStatsHandler)
 }

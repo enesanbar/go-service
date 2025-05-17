@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"time"
@@ -14,7 +15,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-type GRPCServerParams struct {
+// ServerParams holds the parameters for creating a gRPC server.
+type ServerParams struct {
 	fx.In
 
 	Logger log.Factory
@@ -23,16 +25,18 @@ type GRPCServerParams struct {
 	ServerOptions []grpc.ServerOption `group:"grpc-server-options"`
 }
 
-type GRPCServer struct {
+// Server is a wrapper around the gRPC server.
+type Server struct {
 	Server *grpc.Server
 	logger log.Factory
 	cfg    *ServerConfig
 }
 
-func NewServer(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
+// NewServer creates a new gRPC server with the provided parameters.
+func NewServer(p ServerParams) (wiring.RunnableGroup, *Server) {
 	s := grpc.NewServer(p.ServerOptions...)
 	reflection.Register(s)
-	grpcServer := &GRPCServer{
+	grpcServer := &Server{
 		Server: s,
 		logger: p.Logger,
 		cfg:    p.Config,
@@ -43,27 +47,27 @@ func NewServer(p GRPCServerParams) (wiring.RunnableGroup, *GRPCServer) {
 	}, grpcServer
 }
 
-func (s *GRPCServer) Start() error {
-	s.logger.Bg().
+func (s *Server) Start(ctx context.Context) error {
+	s.logger.For(ctx).
 		With(zap.Int("port", s.cfg.Port)).
 		With(zap.Any("config", s.cfg)).
 		Info("starting GRPC Server")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
 	if err != nil {
-		s.logger.Bg().With(zap.Error(err)).Error("failed to listen")
+		s.logger.For(ctx).With(zap.Error(err)).Error("failed to listen")
 		return err
 	}
 
 	if err := s.Server.Serve(lis); err != nil {
-		s.logger.Bg().With(zap.Error(err)).Error("failed to serve")
+		s.logger.For(ctx).With(zap.Error(err)).Error("failed to serve")
 		return err
 	}
 
 	return nil
 }
 
-func (s *GRPCServer) Stop() error {
+func (s *Server) Stop(ctx context.Context) error {
 	timer := time.AfterFunc(time.Duration(s.cfg.GracefulStopTimeoutSeconds)*time.Second, func() {
 		s.logger.Bg().Info("gRPC server could not be stopped gracefully, forcing stop")
 		s.Server.Stop()

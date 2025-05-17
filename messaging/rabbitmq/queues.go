@@ -6,12 +6,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func RabbitMQQueues(conf config.Config, logger log.Factory, channels map[string]*Channel) (map[string]*Queue, error) {
+// Queues creates a map of queues from the configuration file.
+func Queues(conf config.Config, logger log.Factory, channels map[string]*Channel) (map[string]*Queue, error) {
 	if len(channels) == 0 {
 		return nil, nil
 	}
 
-	cfg := conf.GetStringMap("datasources.rabbitmq.queues")
+	cfg := conf.GetStringMap("rabbitmq.queues")
 
 	queues := make(map[string]*Queue)
 

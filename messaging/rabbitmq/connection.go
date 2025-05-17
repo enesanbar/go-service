@@ -16,6 +16,7 @@ type Connection struct {
 	Conn          *amqp.Connection
 	ConnCloseChan chan *amqp.Error
 	Config        *ConnectionConfig
+	AppStopSignal chan struct{}
 }
 
 type ConnectionParams struct {
@@ -27,8 +28,9 @@ type ConnectionParams struct {
 
 func NewConnector(p ConnectionParams) (*Connection, error) {
 	return &Connection{
-		logger: p.Logger,
-		Config: p.Config,
+		logger:        p.Logger,
+		Config:        p.Config,
+		AppStopSignal: make(chan struct{}),
 	}, nil
 }
 
@@ -74,7 +76,7 @@ func (c *Connection) connect() error {
 func (c *Connection) Start(ctx context.Context) error {
 	c.logger.Bg().
 		With(zap.String("name", c.Config.Name)).
-		Info("starting connection watcher")
+		Info("starting connection watcher for rabbitmq connection")
 
 	for {
 		if c.ConnCloseChan == nil {
@@ -88,18 +90,29 @@ func (c *Connection) Start(ctx context.Context) error {
 				With(zap.Error(err)).
 				Error("connection closed")
 			if !c.Conn.IsClosed() {
-				c.Close(ctx)
+				return c.Close(ctx)
 			}
 			c.connect()
 			time.Sleep(5 * time.Second)
+		case <-c.AppStopSignal:
+			c.logger.For(ctx).Info("context done, stopping the connection watcher")
+			return nil
 		}
 
 	}
-	return nil
 }
 
 // Close closes the connection to RabbitMQ
 func (c *Connection) Close(ctx context.Context) error {
+	c.AppStopSignal <- struct{}{}
+
+	if c.Conn.IsClosed() {
+		c.logger.Bg().
+			With(zap.String("host", c.Config.Host)).
+			With(zap.String("name", c.Config.Name)).
+			Info("connection already closed")
+		return nil
+	}
 	err := c.Conn.Close()
 	if err != nil {
 		return err

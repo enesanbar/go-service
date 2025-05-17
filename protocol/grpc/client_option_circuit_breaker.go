@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/enesanbar/go-service/core/info"
 	"github.com/enesanbar/go-service/core/log"
 	"github.com/sony/gobreaker"
 	"go.uber.org/fx"
@@ -11,20 +12,18 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCClientOptionCircuitBreakerParams struct {
+type ClientOptionCircuitBreakerParams struct {
 	fx.In
 
 	Logger log.Factory
 	Config *ServerConfig
 }
 
-func NewCircuitBreaker() {
-
-}
-
-func NewGRPCClientOptionCircuitBreaker(p GRPCClientOptionCircuitBreakerParams) grpc.DialOption {
+func NewClientOptionCircuitBreaker(p ClientOptionCircuitBreakerParams) grpc.DialOption {
+	// TODO: configure the circuit breaker settings from the config per service, or per method. use the default config if none is provided
+	// map[string]*CircuitBreaker
 	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
-		Name:        "demo",
+		Name:        info.ServiceName,
 		MaxRequests: 3,
 		Timeout:     4,
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
