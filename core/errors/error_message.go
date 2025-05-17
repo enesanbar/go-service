@@ -1,6 +1,6 @@
 package errors
 
-// ErrorMessage recursively checks for human-readable message of the error, if available.
+// ErrorMessage recursively checks for a human-readable message of the error, if available.
 // Otherwise, returns a generic error message.
 func ErrorMessage(err error) string {
 	if err == nil {

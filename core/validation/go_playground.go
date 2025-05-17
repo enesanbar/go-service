@@ -10,16 +10,16 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 
-	go_playground "github.com/go-playground/validator/v10"
-	en_translations "github.com/go-playground/validator/v10/translations/en"
+	goplayground "github.com/go-playground/validator/v10"
+	translations "github.com/go-playground/validator/v10/translations/en"
 )
 
 type goPlayground struct {
-	validator *go_playground.Validate
+	validator *goplayground.Validate
 	Translate ut.Translator
 }
 
-func (g *goPlayground) GetValidator() *go_playground.Validate {
+func (g *goPlayground) GetValidator() *goplayground.Validate {
 	return g.validator
 }
 
@@ -45,8 +45,8 @@ func NewGoPlayground(p Params) (Validator, error) {
 		return nil, errors.New("translator not found")
 	}
 
-	v := go_playground.New()
-	if err := en_translations.RegisterDefaultTranslations(v, translate); err != nil {
+	v := goplayground.New()
+	if err := translations.RegisterDefaultTranslations(v, translate); err != nil {
 		return nil, errors.New("translator not found")
 	}
 
@@ -70,7 +70,7 @@ func (g *goPlayground) Validate(i interface{}) error {
 
 func (g *goPlayground) Messages(rawError error) []Error {
 	errs := make([]Error, 0)
-	validationErrors := rawError.(go_playground.ValidationErrors)
+	validationErrors := rawError.(goplayground.ValidationErrors)
 	for _, validationError := range validationErrors {
 		errs = append(errs, Error{
 			strings.ToLower(validationError.Field()),
@@ -81,6 +81,6 @@ func (g *goPlayground) Messages(rawError error) []Error {
 	return errs
 }
 
-func (g *goPlayground) Register(tag string, fn go_playground.Func) {
+func (g *goPlayground) Register(tag string, fn goplayground.Func) {
 	g.validator.RegisterValidation(tag, fn)
 }

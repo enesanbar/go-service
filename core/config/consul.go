@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/enesanbar/go-service/core/info"
-	"github.com/enesanbar/go-service/core/osutil"
 	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/osutil"
 
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"
@@ -20,7 +20,7 @@ const (
 	EnvProd    = "prod"
 )
 
-var consulHost string = osutil.GetEnv("CONSUL_HOST", "localhost")
+var consulHost = osutil.GetEnv("CONSUL_HOST", "localhost")
 
 type ConsulConfigProvider struct {
 	viper  *viper.Viper

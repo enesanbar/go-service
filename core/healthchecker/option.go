@@ -1,16 +1,16 @@
 package healthchecker
 
 type options struct {
-	Probes []HealthCheckerProbe
+	Probes []Probe
 }
 
 var defaultHealthCheckerOptions = options{
-	Probes: []HealthCheckerProbe{},
+	Probes: []Probe{},
 }
 
-type HealthCheckerOption func(o *options)
+type Option func(o *options)
 
-func WithProbes(p ...HealthCheckerProbe) HealthCheckerOption {
+func WithProbes(p ...Probe) Option {
 	return func(o *options) {
 		o.Probes = p
 	}

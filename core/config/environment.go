@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/enesanbar/go-service/core/osutil"
 	"github.com/enesanbar/go-service/core/log"
+	"github.com/enesanbar/go-service/core/osutil"
 	"go.uber.org/zap"
 )
 

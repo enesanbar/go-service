@@ -7,7 +7,7 @@ import (
 var Module = fx.Module(
 	"health-checker",
 	fx.Provide(
-		NewDefaultHealthCheckerFactory,
+		NewDefaultFactory,
 		NewFxHealthChecker,
 	),
 )
@@ -15,8 +15,8 @@ var Module = fx.Module(
 type FxHealthCheckerParam struct {
 	fx.In
 
-	Factory HealthCheckerFactory
-	Probes  []HealthCheckerProbe `group:"health-checker-probes"`
+	Factory Factory
+	Probes  []Probe `group:"health-checker-probes"`
 }
 
 func NewFxHealthChecker(p FxHealthCheckerParam) (*HealthChecker, error) {

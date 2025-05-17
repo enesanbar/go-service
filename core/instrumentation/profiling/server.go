@@ -1,6 +1,7 @@
 package profiling
 
 import (
+	"context"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -26,12 +27,12 @@ func NewProfileServer(log log.Factory) (wiring.RunnableGroup, *ProfileServer) {
 	return wiring.RunnableGroup{}, nil
 }
 
-func (ts *ProfileServer) Start() error {
-	ts.logger.Bg().Info("starting profiling server on 6060...")
+func (ts *ProfileServer) Start(ctx context.Context) error {
+	ts.logger.For(ctx).Info("starting profiling server on 6060...")
 	return http.ListenAndServe(":6060", nil)
 }
 
-func (ts *ProfileServer) Stop() error {
-	ts.logger.Bg().Info("gracefully stopping profiling server")
+func (ts *ProfileServer) Stop(ctx context.Context) error {
+	ts.logger.For(ctx).Info("stopping profiling server")
 	return nil
 }

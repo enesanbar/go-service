@@ -1,6 +1,8 @@
 package prometheus
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,7 +43,7 @@ func NewTelemetryServer(
 	return wiring.RunnableGroup{Runnable: server}, server
 }
 
-func (ts *TelemetryServer) Start() error {
+func (ts *TelemetryServer) Start(ctx context.Context) error {
 	logger := func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if ts.BaseConfig.IsVerbose() {
@@ -68,11 +70,23 @@ func (ts *TelemetryServer) Start() error {
 	}
 	ts.Server = srv
 
-	ts.logger.Bg().Info(fmt.Sprintf("starting Telemetry server on port %d", ts.cfg.Port))
-	return srv.ListenAndServe()
+	ts.logger.For(ctx).Info(fmt.Sprintf("starting Telemetry server on port %d", ts.cfg.Port))
+	err := srv.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		ts.logger.For(ctx).With(zap.Error(err)).Error("failed to start Telemetry server")
+		return err
+	}
+	return nil
 }
 
-func (ts *TelemetryServer) Stop() error {
-	ts.logger.Bg().Info("stopping Telemetry server")
-	return ts.Server.Close()
+func (ts *TelemetryServer) Stop(ctx context.Context) error {
+	ts.logger.For(ctx).Info("stopping Telemetry server")
+	err := ts.Server.Close()
+
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		ts.logger.For(ctx).With(zap.Error(err)).Error("failed to stop Telemetry server")
+		return err
+	}
+	ts.logger.For(ctx).Info("Telemetry server stopped")
+	return nil
 }

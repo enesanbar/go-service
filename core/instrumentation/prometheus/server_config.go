@@ -16,7 +16,7 @@ const (
 	WriteTimeout        = "write_timeout"
 	WriteTimeoutDefault = 20
 
-	GracefulStopTimeoutSeconds = "graceful_stop_timeout_seconds"
+	GracefulStopTimeoutSeconds = "gracefulStopTimeoutSeconds"
 	GracefulStopTimeoutDefault = 10
 )
 
@@ -30,25 +30,22 @@ type TelemetryServerConfig struct {
 func NewTelemetryServerConfig(cfg config.Config) *TelemetryServerConfig {
 	key := "server.telemetry.%s"
 
-	property := fmt.Sprintf(key, Port)
-	port := cfg.GetInt(property)
+	port := cfg.GetInt(fmt.Sprintf(key, Port))
 	if port == 0 {
 		port = PortDefault
 	}
 
-	property = fmt.Sprintf(key, ReadTimeout)
-	readTimeout := cfg.GetInt(property)
-	if port == 0 {
+	readTimeout := cfg.GetInt(fmt.Sprintf(key, ReadTimeout))
+	if readTimeout == 0 {
 		readTimeout = ReadTimeoutDefault
 	}
 
-	property = fmt.Sprintf(key, WriteTimeout)
-	writeTimeout := cfg.GetInt(property)
-	if port == 0 {
+	writeTimeout := cfg.GetInt(fmt.Sprintf(key, WriteTimeout))
+	if writeTimeout == 0 {
 		writeTimeout = WriteTimeoutDefault
 	}
 
-	gracefulStopTimeout := cfg.GetInt(property)
+	gracefulStopTimeout := cfg.GetInt(fmt.Sprintf(key, GracefulStopTimeoutSeconds))
 	if gracefulStopTimeout == 0 {
 		gracefulStopTimeout = GracefulStopTimeoutDefault
 	}

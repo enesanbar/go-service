@@ -1,16 +1,16 @@
 package healthchecker
 
-type HealthCheckerFactory interface {
-	Create(options ...HealthCheckerOption) (*HealthChecker, error)
+type Factory interface {
+	Create(options ...Option) (*HealthChecker, error)
 }
 
-type DefaultHealthCheckerFactory struct{}
+type DefaultFactory struct{}
 
-func NewDefaultHealthCheckerFactory() HealthCheckerFactory {
-	return &DefaultHealthCheckerFactory{}
+func NewDefaultFactory() Factory {
+	return &DefaultFactory{}
 }
 
-func (f *DefaultHealthCheckerFactory) Create(options ...HealthCheckerOption) (*HealthChecker, error) {
+func (f *DefaultFactory) Create(options ...Option) (*HealthChecker, error) {
 
 	appliedOpts := defaultHealthCheckerOptions
 	for _, applyOpt := range options {

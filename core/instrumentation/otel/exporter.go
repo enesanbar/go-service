@@ -13,13 +13,13 @@ import (
 )
 
 func NewOTLPExporter() (*otlptrace.Exporter, error) {
-	endpoint_url := osutil.GetEnv("OTEL_EXPORTER_OTLP_ENDPOINT_URL", "http://localhost:4318/v1/traces")
+	endpointURL := osutil.GetEnv("OTEL_EXPORTER_OTLP_ENDPOINT_URL", "http://localhost:4318/v1/traces")
 
 	// further configure the options if needed
 	return otlptracehttp.New(
 		context.Background(),
 		// otlptracehttp.WithInsecure(),
-		otlptracehttp.WithEndpointURL(endpoint_url),
+		otlptracehttp.WithEndpointURL(endpointURL),
 	)
 }
 
