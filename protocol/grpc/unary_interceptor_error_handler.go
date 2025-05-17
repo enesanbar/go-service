@@ -11,13 +11,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type GRPCServerOptionUnaryInterceptorErrorHandlerParams struct {
+// ServerOptionUnaryInterceptorErrorHandlerParams holds the parameters for creating a gRPC server option for unary interceptor error handling.
+type ServerOptionUnaryInterceptorErrorHandlerParams struct {
 	fx.In
 
 	Logger log.Factory
 }
 
-func NewGRPCServerOptionUnaryInterceptorErrorHandler(p GRPCServerOptionUnaryInterceptorErrorHandlerParams) grpc.ServerOption {
+// NewServerOptionUnaryInterceptorErrorHandler creates a new gRPC server option for unary interceptor error handling.
+func NewServerOptionUnaryInterceptorErrorHandler(p ServerOptionUnaryInterceptorErrorHandlerParams) grpc.ServerOption {
 	return grpc.UnaryInterceptor(func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		m, err := handler(ctx, req)
 		if err != nil {

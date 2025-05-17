@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type GRPCClientOptionCredentialsParams struct {
+type ClientOptionCredentialsParams struct {
 	fx.In
 
 	Logger log.Factory
 	Config *ServerConfig
 }
 
-func NewGRPCClientOptionCredentials(p GRPCClientOptionCredentialsParams) grpc.DialOption {
+func NewClientOptionCredentials(p ClientOptionCredentialsParams) grpc.DialOption {
 	if !p.Config.TLS.ClientTLSEnabled {
 		return grpc.WithTransportCredentials(insecure.NewCredentials())
 	}

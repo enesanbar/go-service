@@ -16,14 +16,14 @@ import (
 	"go.uber.org/fx"
 )
 
-type RabbitMQProducer struct {
+type Producer struct {
 	Logger     log.Factory
 	Channel    *Channel
 	Channels   map[string]*Channel
 	Propagator propagation.TextMapPropagator
 }
 
-type RabbitMQProducerParams struct {
+type ProducerParams struct {
 	fx.In
 
 	Logger     log.Factory
@@ -31,8 +31,9 @@ type RabbitMQProducerParams struct {
 	Propagator propagation.TextMapPropagator
 }
 
-func NewRabbitMQProducer(params RabbitMQProducerParams) *RabbitMQProducer {
-	p := &RabbitMQProducer{
+// NewRabbitMQProducer creates a pointer to the new instance of the Producer
+func NewRabbitMQProducer(params ProducerParams) *Producer {
+	p := &Producer{
 		Logger:     params.Logger,
 		Channels:   params.Channels,
 		Propagator: params.Propagator,
@@ -50,7 +51,7 @@ func NewRabbitMQProducer(params RabbitMQProducerParams) *RabbitMQProducer {
 	return p
 }
 
-func (p *RabbitMQProducer) Publish(ctx context.Context, messageName string, payload any) error {
+func (p *Producer) Publish(ctx context.Context, messageName string, payload any) error {
 	message := messages.Message[any]{
 		Metadata: messages.Metadata{
 			PublisherName: info.ServiceName,
@@ -81,7 +82,7 @@ func (p *RabbitMQProducer) Publish(ctx context.Context, messageName string, payl
 	)
 }
 
-func (p *RabbitMQProducer) SetChannel(channelName string) {
+func (p *Producer) SetChannel(channelName string) {
 	channel, ok := p.Channels[channelName]
 	if !ok {
 		p.Logger.Bg().Error(fmt.Sprintf("channel %s not found", channelName))
@@ -89,7 +90,7 @@ func (p *RabbitMQProducer) SetChannel(channelName string) {
 	p.Channel = channel
 }
 
-func (p *RabbitMQProducer) enrichMessageWithTrace(ctx context.Context, message *messages.Message[any]) {
+func (p *Producer) enrichMessageWithTrace(ctx context.Context, message *messages.Message[any]) {
 	span := trace.SpanFromContext(ctx)
 	if !span.SpanContext().IsValid() {
 		return

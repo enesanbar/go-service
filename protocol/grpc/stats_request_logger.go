@@ -16,11 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// RequestLoggerStatsHandler implements [stats.RequestLoggerStatsHandler](https://pkg.go.dev/google.golang.org/grpc/stats#RequestLoggerStatsHandler) interface.
+// RequestLoggerStatsHandler is a gRPC stats handler that logs request and response payloads.
 type RequestLoggerStatsHandler struct {
 	logger log.Factory
 }
 
+// NewRequestLoggerStatsHandler creates a new RequestLoggerStatsHandler.
 func NewRequestLoggerStatsHandler(logger log.Factory) *RequestLoggerStatsHandler {
 	return &RequestLoggerStatsHandler{
 		logger: logger,

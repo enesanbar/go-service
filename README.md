@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/enesanbar/go-service)
+
 # Go Service
 ## Introduction
 Go Service is a base service project that supports

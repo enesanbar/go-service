@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed to get full history for conventional commits
+          fetch-depth: 0  # Needed to get a full history for conventional commits
       - name: Set up Git identity
         run: |
           git config --global user.name "GitHub Actions"
@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Install semtag
         shell: bash
@@ -33,12 +33,13 @@ jobs:
         run: |
           # Get list of changed files since last commit
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          # CHANGED_FILES=$(git diff --name-only)  # to test it with act
+          # CHANGED_FILES=$(git diff --name-only)  # to test it locally with act
           echo "Changed files: $CHANGED_FILES"
           
           # Find all go.mod files in the repo
           ALL_MODULES=$(find . -name go.mod | sed 's|/go.mod||')
           echo "All modules: $ALL_MODULES"
+          
           # Determine which modules have changes
           CHANGED_MODULES=""
           for module in $ALL_MODULES; do
@@ -50,6 +51,7 @@ jobs:
             done
           done
           echo "Changed modules: $CHANGED_MODULES"
+          
           # Output the result
           echo "changed_modules=${CHANGED_MODULES}" >> $GITHUB_OUTPUT
 

@@ -16,7 +16,7 @@ const (
 	WriteTimeout        = "write_timeout"
 	WriteTimeoutDefault = 20
 
-	GracefulStopTimeoutSeconds = "graceful_stop_timeout_seconds"
+	GracefulStopTimeoutSeconds = "gracefulStopTimeoutSeconds"
 	GracefulStopTimeoutDefault = 10
 )
 
@@ -38,16 +38,17 @@ func NewConfig(cfg config.Config) *ServerConfig {
 
 	property = fmt.Sprintf(key, ReadTimeout)
 	readTimeout := cfg.GetInt(property)
-	if port == 0 {
+	if readTimeout == 0 {
 		readTimeout = ReadTimeoutDefault
 	}
 
 	property = fmt.Sprintf(key, WriteTimeout)
 	writeTimeout := cfg.GetInt(property)
-	if port == 0 {
+	if writeTimeout == 0 {
 		writeTimeout = WriteTimeoutDefault
 	}
 
+	property = fmt.Sprintf(key, GracefulStopTimeoutSeconds)
 	gracefulStopTimeout := cfg.GetInt(property)
 	if gracefulStopTimeout == 0 {
 		gracefulStopTimeout = GracefulStopTimeoutDefault

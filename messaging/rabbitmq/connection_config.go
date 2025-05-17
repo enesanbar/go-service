@@ -22,31 +22,32 @@ type ConnectionConfig struct {
 }
 
 func NewConnectionConfig(cfg config.Config, name string) (*ConnectionConfig, error) {
-	keyTemplate := "datasources.rabbitmq.connections.%s.%s"
+	keyTemplate := "rabbitmq.connections.%s.%s"
 
-	property := fmt.Sprintf(keyTemplate, name, PropertyHost)
-	host := cfg.GetString(property)
+	host := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyHost))
 	if host == "" {
 		host = "localhost" // Default RabbitMQ host
 	}
 
-	port := cfg.GetString(fmt.Sprintf(keyTemplate, name, "port"))
+	port := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyPort))
 	if port == "" {
 		port = "5672" // Default RabbitMQ port
 	}
 
-	property = fmt.Sprintf(keyTemplate, name, PropertyUsername)
+	property := fmt.Sprintf(keyTemplate, name, PropertyUsername)
 	username := cfg.GetString(property)
 	if username == "" {
 		return nil, config.NewMissingPropertyError(property)
 	}
 
-	password := cfg.GetString(fmt.Sprintf(keyTemplate, name, PropertyPassword))
+	property = fmt.Sprintf(keyTemplate, name, PropertyPassword)
+	password := cfg.GetString(property)
 	if password == "" {
 		return nil, config.NewMissingPropertyError(property)
 	}
 
 	return &ConnectionConfig{
+		Name: name,
 		Host: host,
 		Port: port,
 		User: username,

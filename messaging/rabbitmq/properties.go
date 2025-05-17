@@ -1,15 +1,15 @@
 package rabbitmq
 
 const (
-	PropertyName        = "name"
+	PropertyConsumerTag = "consumer-tag"
 	PropertyChannel     = "channel"
+	PropertyAutoAck     = "auto-ack"
 	PropertyDurable     = "durable"
 	PropertyType        = "type"
 	PropertyAutoDelete  = "auto-delete"
 	PropertyExclusive   = "exclusive"
-	PropertyInternal    = "internal"
+	PropertyNoLocal     = "no-local"
 	PropertyNoWait      = "no-wait"
-	PropertyConnection  = "connection"
 	PropertyQueue       = "queue"
 	PropertyExchange    = "exchange"
 	PropertyRoutingKeys = "routing-keys"

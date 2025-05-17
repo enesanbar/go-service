@@ -15,14 +15,16 @@ import (
 )
 
 type Connection struct {
-	Conn *sql.DB
+	Logger log.Factory
+	Conn   *sql.DB
+	Config *Config
 }
 
 type ConnectionParams struct {
 	fx.In
 
-	Config *Config
 	Logger log.Factory
+	Config *Config
 }
 
 func NewConnection(p ConnectionParams) *Connection {
@@ -56,25 +58,10 @@ func NewConnection(p ConnectionParams) *Connection {
 	db.SetConnMaxLifetime(time.Duration(p.Config.MaxConnectionLifetime) * time.Second)
 	db.SetConnMaxIdleTime(time.Duration(p.Config.MaxConnectionIdleTime) * time.Second)
 
-	p.Logger.Bg().With(
-		zap.String("host", p.Config.Host),
-		zap.Int("port", p.Config.Port),
-		zap.String("database", p.Config.Name),
-	).Info("Connecting to MySQL")
-
-	duration := time.Duration(p.Config.Timeout) * time.Second
-	var ctx, cancel = context.WithTimeout(context.Background(), duration)
-	defer cancel()
-
-	// Open doesn't open a connection. Validate DSN data:
-	err = db.PingContext(ctx)
-	if err != nil {
-		p.Logger.Bg().Error("Could not ping database", zap.Error(err))
-		return nil
-	}
-
 	return &Connection{
-		Conn: db,
+		Logger: p.Logger,
+		Conn:   db,
+		Config: p.Config,
 	}
 }
 
@@ -82,10 +69,30 @@ func (c *Connection) GetConn() *sql.DB {
 	return c.Conn
 }
 
-func (c *Connection) Start() error {
+func (c *Connection) Start(ctx context.Context) error {
+	c.Logger.Bg().With(
+		zap.String("host", c.Config.Host),
+		zap.Int("port", c.Config.Port),
+		zap.String("database", c.Config.Name),
+	).Info("Connecting to MySQL")
+
+	duration := time.Duration(c.Config.Timeout) * time.Second
+	ctx, cancel := context.WithTimeout(ctx, duration)
+	defer cancel()
+
+	err := c.Conn.PingContext(ctx)
+	if err != nil {
+		c.Logger.Bg().Error("Could not ping database", zap.Error(err))
+		return nil
+	}
 	return nil
 }
 
-func (c *Connection) Stop() error {
+func (c *Connection) Close(ctx context.Context) error {
+	c.Logger.For(ctx).Info("closing MySQL connection")
 	return c.Conn.Close()
+}
+
+func (c *Connection) Name() string {
+	return c.Config.Name
 }

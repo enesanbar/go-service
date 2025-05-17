@@ -6,12 +6,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func MySQLConnections(conf config.Config, logger log.Factory) (map[string]*Connection, error) {
-	prefix := "datasources.mysql"
+// Connections return a map of connections configured in the configuration file.
+func Connections(conf config.Config, logger log.Factory) (map[string]*Connection, error) {
+	prefix := "mysql"
 	cfg := conf.GetStringMap(prefix)
 	connections := make(map[string]*Connection)
 	for k := range cfg {
-		config, err := NewConfig(conf, k)
+		currentConfig, err := NewConfig(conf, k)
 		if err != nil {
 			logger.Bg().
 				With(zap.String("connection", k)).
@@ -20,14 +21,9 @@ func MySQLConnections(conf config.Config, logger log.Factory) (map[string]*Conne
 			return nil, err
 		}
 		conn := NewConnection(ConnectionParams{
-			Config: config,
+			Config: currentConfig,
 			Logger: logger,
 		})
-		// TODO: this does nothing. Implement lazy start later
-		err = conn.Start()
-		if err != nil {
-			return nil, err
-		}
 		connections[k] = conn
 	}
 

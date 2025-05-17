@@ -10,7 +10,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCServerOptionOTELStatsParams struct {
+// ServerOptionOTELStatsParams holds the parameters for creating a gRPC server option for OpenTelemetry stats.
+type ServerOptionOTELStatsParams struct {
 	fx.In
 
 	TracerProvider *trace.TracerProvider
@@ -18,7 +19,8 @@ type GRPCServerOptionOTELStatsParams struct {
 	MeterProvider  *otelmetric.MeterProvider
 }
 
-func NewGRPCServerOptionOTELStats(p GRPCServerOptionOTELStatsParams) grpc.ServerOption {
+// NewServerOptionOTELStats creates a new gRPC server option for OpenTelemetry stats.
+func NewServerOptionOTELStats(p ServerOptionOTELStatsParams) grpc.ServerOption {
 	return grpc.StatsHandler(otelgrpc.NewServerHandler(
 		otelgrpc.WithTracerProvider(p.TracerProvider),
 		otelgrpc.WithPropagators(p.Propagator),

@@ -4,66 +4,53 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"strings"
 
 	"github.com/enesanbar/go-service/core/log"
 	"github.com/enesanbar/go-service/core/messaging/consumer"
 	"github.com/enesanbar/go-service/core/messaging/messages"
-	"github.com/enesanbar/go-service/core/wiring"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
-type RabbitMQQueueConsumer struct {
+type QueueConsumer struct {
 	logger          log.Factory
+	Config          *ConsumerConfig
 	Channel         *Channel
 	Queue           *Queue
-	Channels        map[string]*Channel
-	Queues          map[string]*Queue
 	MessageHandlers map[string]consumer.MessageHandler
 	Propagator      propagation.TextMapPropagator
 	Tracer          trace.Tracer
 }
 
-// NewRabbitMQConsumer creates a pointer to the new instance of the RabbitMQQueueConsumer
-// and a runnable group that can be used to start and stop the consumer
-func NewRabbitMQConsumer(p RabbitMQConsumersParams) (wiring.RunnableGroup, *RabbitMQQueueConsumer) {
-	consumer := &RabbitMQQueueConsumer{
-		logger:          p.Logger,
-		MessageHandlers: p.MessageHandlers,
-		Channels:        p.Channels,
-		Queues:          p.Queues,
-		Propagator:      p.Propagator,
-		Tracer:          p.TracerProvider.Tracer("rabbitmq-consumer"),
-	}
-
-	// set the default channel and queue if it exists in Channels and Queues
-	if len(p.Channels) > 0 {
-		for name, channel := range p.Channels {
-			if name == "default" {
-				consumer.Channel = channel
-				break
-			}
-		}
-	}
-
-	if len(p.Queues) > 0 {
-		for name, queue := range p.Queues {
-			if name == "default" {
-				consumer.Queue = queue
-				break
-			}
-		}
-	}
-
-	return wiring.RunnableGroup{
-		Runnable: consumer,
-	}, consumer
+type ConsumerParams struct {
+	Logger          log.Factory
+	Config          *ConsumerConfig
+	Channel         *Channel
+	Queue           *Queue
+	MessageHandlers map[string]consumer.MessageHandler
+	Propagator      propagation.TextMapPropagator
+	TracerProvider  *tracesdk.TracerProvider
 }
 
-func (h *RabbitMQQueueConsumer) Start() error {
+// NewRabbitMQConsumer creates a pointer to the new instance of the QueueConsumer
+// and a runnable group that can be used to start and stop the consumer
+func NewRabbitMQConsumer(p ConsumerParams) *QueueConsumer {
+	return &QueueConsumer{
+		logger:          p.Logger,
+		Config:          p.Config,
+		Channel:         p.Channel,
+		Queue:           p.Queue,
+		MessageHandlers: p.MessageHandlers,
+		Propagator:      p.Propagator,
+		Tracer:          p.TracerProvider.Tracer(fmt.Sprintf("consumer-%s", p.Queue.Config.Name)),
+	}
+}
+
+func (h *QueueConsumer) Start(ctx context.Context) error {
 	if h.Channel == nil {
 		return fmt.Errorf("channel is not set, check your configuration")
 	}
@@ -73,13 +60,13 @@ func (h *RabbitMQQueueConsumer) Start() error {
 
 	// add recovery logic to the channel when channel/connection is closed
 	msgs, err := h.Channel.Channel.Consume(
-		h.Queue.Queue.Name, // queue
-		"",                 // consumer
-		true,               // auto ack
-		false,              // exclusive
-		false,              // no local
-		false,              // no wait
-		nil,                // args
+		h.Queue.Queue.Name,
+		h.Config.ConsumerTag,
+		h.Config.AutoAck,
+		h.Config.Exclusive,
+		h.Config.NoLocal,
+		h.Config.NoWait,
+		nil, // args
 	)
 	if err != nil {
 		return fmt.Errorf("error starting RabbitMQ consumer (%w)", err)
@@ -92,14 +79,14 @@ func (h *RabbitMQQueueConsumer) Start() error {
 				message := messages.Message[any]{}
 				err := json.Unmarshal(d.Body, &message)
 				if err != nil {
-					h.logger.Bg().With(zap.Error(err)).Error("Failed to unmarshal message")
+					h.logger.For(ctx).With(zap.Error(err)).Error("Failed to unmarshal message")
 					return
 				}
 
 				key := fmt.Sprintf("%s-%s", h.Queue.Config.Name, message.Metadata.MessageName)
 				handler, ok := h.MessageHandlers[key]
 				if !ok {
-					h.logger.Bg().With(zap.String("messageName", message.Metadata.MessageName)).Error("no handler found for message")
+					h.logger.For(ctx).With(zap.String("messageName", message.Metadata.MessageName)).Error("no handler found for message")
 					return
 				}
 
@@ -113,7 +100,7 @@ func (h *RabbitMQQueueConsumer) Start() error {
 					"traceparent": message.Metadata.Traceparent,
 					"tracestate":  message.Metadata.Tracestate,
 				}
-				ctx := h.Propagator.Extract(context.Background(), carrier)
+				ctx := h.Propagator.Extract(ctx, carrier)
 
 				// Start a new span that:
 				// 1. Continues the trace from traceparent
@@ -145,24 +132,8 @@ func (h *RabbitMQQueueConsumer) Start() error {
 	return nil
 }
 
-func (h *RabbitMQQueueConsumer) Stop() error {
-	h.logger.Bg().Info("RabbitMQ consumer stopped")
+func (h *QueueConsumer) Stop(ctx context.Context) error {
 	return nil
-}
-
-func (h *RabbitMQQueueConsumer) SetChannel(channelName string) {
-	channel, ok := h.Channels[channelName]
-	if !ok {
-		h.logger.Bg().Error(fmt.Sprintf("channel %s not found, check your configuration", channelName))
-	}
-	h.Channel = channel
-}
-func (h *RabbitMQQueueConsumer) SetQueue(queueName string) {
-	queue, ok := h.Queues[queueName]
-	if !ok {
-		h.logger.Bg().Error(fmt.Sprintf("queue %s not found, check your configuration", queueName))
-	}
-	h.Queue = queue
 }
 
 func parseTraceID(traceparent string) trace.TraceID {

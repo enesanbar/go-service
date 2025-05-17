@@ -11,7 +11,8 @@ import (
 	"google.golang.org/grpc/stats/opentelemetry"
 )
 
-type GRPCClientOptionOTELParams struct {
+// ClientOptionOTELParams holds the parameters for creating a gRPC dial option for OpenTelemetry tracing and metrics.
+type ClientOptionOTELParams struct {
 	fx.In
 
 	TracerProvider *trace.TracerProvider
@@ -19,7 +20,8 @@ type GRPCClientOptionOTELParams struct {
 	MeterProvider  *otelmetric.MeterProvider
 }
 
-func NewGRPCClientOptionOTEL(p GRPCClientOptionOTELParams) grpc.DialOption {
+// NewClientOptionOTEL creates a new gRPC dial option for OpenTelemetry tracing and metrics.
+func NewClientOptionOTEL(p ClientOptionOTELParams) grpc.DialOption {
 	return opentelemetry.DialOption(opentelemetry.Options{
 		MetricsOptions: opentelemetry.MetricsOptions{
 			MeterProvider: p.MeterProvider,

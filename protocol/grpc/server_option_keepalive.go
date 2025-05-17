@@ -10,14 +10,14 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-type GRPCServerOptionKeepaliveParams struct {
+type ServerOptionKeepaliveParams struct {
 	fx.In
 
 	Logger log.Factory
 	Config *ServerConfig
 }
 
-func NewGRPCServerOptionKeepAliveEnforcementPolicy(p GRPCServerOptionKeepaliveParams) grpc.ServerOption {
+func NewServerOptionKeepAliveEnforcementPolicy(p ServerOptionKeepaliveParams) grpc.ServerOption {
 	var kaep = keepalive.EnforcementPolicy{
 		MinTime:             time.Duration(p.Config.KeepAlive.MinTimeSeconds) * time.Second,
 		PermitWithoutStream: p.Config.KeepAlive.PermitWithoutStream,
@@ -26,7 +26,7 @@ func NewGRPCServerOptionKeepAliveEnforcementPolicy(p GRPCServerOptionKeepalivePa
 	return grpc.KeepaliveEnforcementPolicy(kaep)
 }
 
-func NewGRPCServerOptionKeepAliveParams(p GRPCServerOptionKeepaliveParams) grpc.ServerOption {
+func NewServerOptionKeepAliveParams(p ServerOptionKeepaliveParams) grpc.ServerOption {
 	var kasp = keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Duration(p.Config.KeepAlive.MaxConnectionIdleSeconds) * time.Second,
 		MaxConnectionAge:      time.Duration(p.Config.KeepAlive.MaxConnectionAgeSeconds) * time.Second,

@@ -14,14 +14,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type GRPCServerOptionCredentialsParams struct {
+// ServerOptionCredentialsParams holds the parameters for creating a gRPC server option for TLS credentials.
+type ServerOptionCredentialsParams struct {
 	fx.In
 
 	Logger log.Factory
 	Config *ServerConfig
 }
 
-func NewGRPCServerOptionCredentials(p GRPCServerOptionCredentialsParams) grpc.ServerOption {
+// NewServerOptionCredentials creates a new gRPC server option for TLS credentials.
+func NewServerOptionCredentials(p ServerOptionCredentialsParams) grpc.ServerOption {
 	if !p.Config.TLS.ServerTLSEnabled {
 		return grpc.Creds(insecure.NewCredentials())
 	}

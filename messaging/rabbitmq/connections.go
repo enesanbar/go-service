@@ -6,8 +6,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func RabbitMQConnections(conf config.Config, logger log.Factory) (map[string]*Connection, error) {
-	prefix := "datasources.rabbitmq.connections"
+// Connections return a map of connections configured in the configuration file.
+func Connections(conf config.Config, logger log.Factory) (map[string]*Connection, error) {
+	prefix := "rabbitmq.connections"
 	cfg := conf.GetStringMap(prefix)
 	connections := make(map[string]*Connection)
 	for k := range cfg {
@@ -20,8 +21,9 @@ func RabbitMQConnections(conf config.Config, logger log.Factory) (map[string]*Co
 			return nil, err
 		}
 		conn := &Connection{
-			logger: logger,
-			Config: config,
+			logger:        logger,
+			Config:        config,
+			AppStopSignal: make(chan struct{}),
 		}
 		err = conn.connect()
 		if err != nil {
