@@ -27,6 +27,7 @@ jobs:
         shell: bash
         run: |
           curl -o semtag -L https://raw.githubusercontent.com/nico2sh/semtag/refs/heads/master/semtag
+          chmod +x semtag
 
       - name: Get changed modules
         id: changed-modules
