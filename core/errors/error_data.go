@@ -4,7 +4,7 @@ package errors
 func ErrorData(err error) interface{} {
 	if err == nil {
 		return ""
-	} else if e, ok := err.(Error); ok && e.Data != nil {
+	} else if e, ok := err.(*Error); ok && e.Data != nil {
 		return e.Data
 	} else if ok && e.Err == nil {
 		return ""

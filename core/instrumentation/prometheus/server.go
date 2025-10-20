@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/enesanbar/go-service/core/config"
-	"github.com/enesanbar/go-service/core/wiring"
-
 	"github.com/enesanbar/go-service/core/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -29,7 +27,7 @@ func NewTelemetryServer(
 	logger log.Factory,
 	baseConfig *config.Base,
 	telemetryConfig *TelemetryServerConfig,
-) (wiring.RunnableGroup, *TelemetryServer) {
+) (*TelemetryServer, error) {
 	telemetryRouter := http.NewServeMux()
 
 	telemetryRouter.Handle("/metrics", promhttp.Handler())
@@ -40,7 +38,7 @@ func NewTelemetryServer(
 		BaseConfig: baseConfig,
 		cfg:        telemetryConfig,
 	}
-	return wiring.RunnableGroup{Runnable: server}, server
+	return server, nil
 }
 
 func (ts *TelemetryServer) Start(ctx context.Context) error {

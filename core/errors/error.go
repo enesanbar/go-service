@@ -19,17 +19,51 @@ type Error struct {
 	Err error
 
 	// Data returns an arbitrary data related to error, e.g. validation error
-	Data interface{}
+	Data any
 }
 
 // NewError creates a new error with the given code, message, and operation.
-func NewError(code, message, op string, err error) Error {
-	return Error{
+func NewError(code, message, op string, err error) *Error {
+	return &Error{
 		Code:    code,
 		Message: message,
 		Op:      op,
 		Err:     err,
 	}
+}
+
+func NewNotFoundError(err error) *Error {
+	return &Error{
+		Code: ENOTFOUND,
+		Err:  err,
+	}
+}
+
+func NewInternalError(err error) *Error {
+	return &Error{
+		Code: EINTERNAL,
+		Err:  err,
+	}
+}
+
+func (e *Error) WithCode(code string) *Error {
+	e.Code = code
+	return e
+}
+
+func (e *Error) WithMessage(message string) *Error {
+	e.Message = message
+	return e
+}
+
+func (e *Error) WithOperation(op string) *Error {
+	e.Op = op
+	return e
+}
+
+func (e *Error) WrapErr(err error) *Error {
+	e.Err = err
+	return e
 }
 
 // SetData sets the data field of the error.
@@ -38,7 +72,7 @@ func (e *Error) SetData(data interface{}) {
 }
 
 // Error returns detailed error message for developer to debug
-func (e Error) Error() string {
+func (e *Error) Error() string {
 	var buf bytes.Buffer
 
 	// Print the current operation in our stack, if any.
@@ -59,6 +93,6 @@ func (e Error) Error() string {
 	return buf.String()
 }
 
-func (e Error) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.Err
 }

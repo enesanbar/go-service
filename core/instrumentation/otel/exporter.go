@@ -43,6 +43,6 @@ func NewExporter() fx.Option {
 	case "zipkin":
 		return ZipkinExporterModule
 	default:
-		return StdoutExporterModule
+		return fx.Options()
 	}
 }

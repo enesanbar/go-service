@@ -40,7 +40,7 @@ func start(p params) func(ctx context.Context) error {
 			}
 		}
 		for _, connection := range p.Connections {
-			if reflect.ValueOf(connection).IsNil() {
+			if connection == nil || reflect.ValueOf(connection).IsNil() {
 				continue
 			}
 			go func() {
@@ -59,7 +59,7 @@ func start(p params) func(ctx context.Context) error {
 		}
 
 		for _, r := range p.Runnables {
-			if reflect.ValueOf(r).IsNil() {
+			if r == nil || reflect.ValueOf(r).IsNil() {
 				continue
 			}
 			go func(r wiring.Runnable) {
@@ -86,9 +86,12 @@ func stop(p params) func(ctx context.Context) error {
 		wg := sync.WaitGroup{}
 		wg.Add(len(p.Runnables))
 		for _, server := range p.Runnables {
+			if server == nil || reflect.ValueOf(server).IsNil() {
+				continue
+			}
 			go func(server wiring.Runnable) {
 				defer wg.Done()
-				if reflect.ValueOf(server).IsNil() {
+				if server == nil || reflect.ValueOf(server).IsNil() {
 					return
 				}
 				if err := server.Stop(ctx); err != nil {
@@ -108,7 +111,7 @@ func stop(p params) func(ctx context.Context) error {
 		for _, connection := range p.Connections {
 			go func(connection wiring.Connection) {
 				defer wg.Done()
-				if reflect.ValueOf(connection).IsNil() {
+				if connection == nil || reflect.ValueOf(connection).IsNil() {
 					return
 				}
 				if err := connection.Close(ctx); err != nil {

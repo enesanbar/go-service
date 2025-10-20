@@ -13,20 +13,24 @@ import (
 type TracerProviderParams struct {
 	fx.In
 
-	Exporter    trace.SpanExporter
-	Environment string `name:"environment"`
+	Exporter    trace.SpanExporter `optional:"true"`
+	Environment string             `name:"environment"`
 }
 
 func NewTracerProvider(p TracerProviderParams) *trace.TracerProvider {
-	provider := trace.NewTracerProvider(
-		trace.WithBatcher(p.Exporter),
+	opts := []trace.TracerProviderOption{
 		trace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(info.ServiceName),
 			attribute.String("environment", p.Environment),
 		)),
 		trace.WithSampler(trace.AlwaysSample()),
-	)
+	}
+	if p.Exporter != nil {
+		opts = append(opts, trace.WithBatcher(p.Exporter))
+	}
+
+	provider := trace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(provider)
 	return provider
 }
