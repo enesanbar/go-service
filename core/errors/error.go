@@ -3,6 +3,8 @@ package errors
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 type Error struct {
@@ -28,7 +30,7 @@ func NewError(code, message, op string, err error) *Error {
 		Code:    code,
 		Message: message,
 		Op:      op,
-		Err:     err,
+		Err:     errors.WithStack(err),
 	}
 }
 

@@ -2,8 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	serviceErr "github.com/enesanbar/go-service/core/errors"
 	"github.com/enesanbar/go-service/core/log"
@@ -43,8 +41,7 @@ func NewUnaryServerInterceptorErrorHandler(p ServerOptionUnaryInterceptorErrorHa
 
 			//  TODO: Print only critical errors in ERROR level, others in WARN level
 			p.Logger.For(ctx).With(
-				//zap.Error(err),
-				zap.String("stacktrace", fmt.Sprintf("%+v", errors.Unwrap(err))),
+				zap.Error(err),
 			).Error("gRPC unary interceptor error", zap.Error(err))
 
 			return m, status.Error(code, message)
