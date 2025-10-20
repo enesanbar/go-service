@@ -24,7 +24,8 @@ type MethodConfig struct {
 }
 
 type ServiceConfig struct {
-	MethodConfig []MethodConfig `json:"methodConfig"`
+	LoadBalancingConfig []map[string]any `json:"loadBalancingConfig,omitempty"`
+	MethodConfig        []MethodConfig   `json:"methodConfig"`
 }
 
 // ClientOptionFactoryParams contains the parameters for the client option factory.
@@ -47,6 +48,9 @@ func NewClientOptionServiceConfigFactory(Config config.Config) func(serviceName 
 			}
 		} else {
 			serviceConfig = ServiceConfig{
+				LoadBalancingConfig: []map[string]any{
+					{"round_robin": map[string]any{}},
+				},
 				MethodConfig: []MethodConfig{{
 					Name:    []map[string]string{{"service": ""}},
 					Timeout: "10s",

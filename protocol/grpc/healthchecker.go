@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
+	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/enesanbar/go-service/core/healthchecker"
 	"github.com/enesanbar/go-service/core/info"
 	"github.com/enesanbar/go-service/core/log"
-	"go.uber.org/zap"
-
 	"google.golang.org/grpc/health"
 	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -31,21 +32,35 @@ func NewHealthCheckHandler(
 	logger.Bg().Info("health check server registered in grpc server")
 	healthgrpc.RegisterHealthServer(grpcServer.Server, healthcheck)
 
-	return &HealthCheckHandler{
+	hc := &HealthCheckHandler{
 		logger:            logger,
 		healthChecker:     healthchecker,
 		GRPCServer:        grpcServer,
 		HealthCheckServer: healthcheck,
 	}
+	// TODO: for now, let's invoke here. it should be invoked from the main app lifecycle as runnable
+	hc.Handle(context.Background())
+	return hc
 }
 
 func (h *HealthCheckHandler) Handle(ctx context.Context) {
-	r := h.healthChecker.Run(ctx)
-	if !r.Success {
-		h.logger.For(ctx).Error("health check failed", zap.Any("message", r.ProbesResults))
-		h.HealthCheckServer.SetServingStatus(info.ServiceName, healthpb.HealthCheckResponse_NOT_SERVING)
-		return
-	}
+	go func() {
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				r := h.healthChecker.Run(ctx)
+				if !r.Success {
+					h.HealthCheckServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+					h.logger.For(ctx).Error("health check failed", zap.Any("message", r.ProbesResults))
+					continue
+				}
 
-	h.HealthCheckServer.SetServingStatus(info.ServiceName, healthpb.HealthCheckResponse_SERVING)
+				// Health check also supports checking serving status for a specific service
+				// in this case, we pass the service name as empty and setting the status for empty service name
+				h.HealthCheckServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+			}
+		}
+	}()
 }

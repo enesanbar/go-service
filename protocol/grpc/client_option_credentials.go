@@ -45,6 +45,7 @@ func NewClientOptionCredentials(p ClientOptionCredentialsParams) grpc.DialOption
 		Certificates:       []tls.Certificate{cert},
 		RootCAs:            caPool,
 		InsecureSkipVerify: false,
+		//ServerName:         "localhost", // Ensure this matches the server's certificate Common Name (CN) or SAN
 	}
 	creds := credentials.NewTLS(tlsCfg)
 

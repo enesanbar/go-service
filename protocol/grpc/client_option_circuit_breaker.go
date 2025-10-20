@@ -31,7 +31,7 @@ func NewClientOptionCircuitBreaker(p ClientOptionCircuitBreakerParams) grpc.Dial
 			return failureRatio >= 0.1
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
-			p.Logger.Bg().Info(fmt.Sprintf("Circuit Breaker: %s, changed from %v, to %v", name, from, to))
+			p.Logger.Bg().Info(fmt.Sprintf("Circuit Breaker: %s, changed from %v to %v", name, from, to))
 		},
 	})
 

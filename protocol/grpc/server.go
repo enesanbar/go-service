@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/enesanbar/go-service/core/log"
-	"github.com/enesanbar/go-service/core/wiring"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/reflection"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 // ServerParams holds the parameters for creating a gRPC server.
@@ -33,7 +32,7 @@ type Server struct {
 }
 
 // NewServer creates a new gRPC server with the provided parameters.
-func NewServer(p ServerParams) (wiring.RunnableGroup, *Server) {
+func NewServer(p ServerParams) (*Server, error) {
 	s := grpc.NewServer(p.ServerOptions...)
 	reflection.Register(s)
 	grpcServer := &Server{
@@ -42,9 +41,7 @@ func NewServer(p ServerParams) (wiring.RunnableGroup, *Server) {
 		cfg:    p.Config,
 	}
 
-	return wiring.RunnableGroup{
-		Runnable: grpcServer,
-	}, grpcServer
+	return grpcServer, nil
 }
 
 func (s *Server) Start(ctx context.Context) error {
