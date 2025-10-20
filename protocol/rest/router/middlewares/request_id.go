@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"context"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/enesanbar/go-service/core/utils"
 
@@ -28,6 +30,12 @@ func NewRequestIDMiddleware() echo.MiddlewareFunc {
 			ctx := context.WithValue(c.Request().Context(), utils.ContextKeyRequestID, rid)
 			requestWithContext := c.Request().WithContext(ctx)
 			c.SetRequest(requestWithContext)
+
+			span := trace.SpanFromContext(c.Request().Context())
+			if span != nil {
+				span.SetAttributes(attribute.String("http.request_id", rid))
+			}
+
 			return next(c)
 		}
 	}

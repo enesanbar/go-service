@@ -3,6 +3,10 @@ package router
 import (
 	"net/http"
 
+	"github.com/enesanbar/go-service/protocol/rest/router/middlewares"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/trace"
+
 	"github.com/enesanbar/go-service/core/config"
 	"github.com/enesanbar/go-service/core/log"
 	"github.com/labstack/echo/v4"
@@ -35,11 +39,17 @@ type EchoParams struct {
 	Config               config.Config
 	BaseConfig           *config.Base
 	HealthCheckerHandler *HealthCheckHandler
+	TracerProvider       *trace.TracerProvider
+	Propagator           propagation.TextMapPropagator
 }
 
 func NewEchoRouter(p EchoParams) *EchoServer {
 	e := echo.New()
 
+	e.Use(middlewares.NewOtelMiddleware(middlewares.OtelMiddlewareParams{
+		TracerProvider: p.TracerProvider,
+		Propagator:     p.Propagator,
+	}))
 	// apply middlewares
 	for _, middleware := range p.Middlewares {
 		if middleware != nil {

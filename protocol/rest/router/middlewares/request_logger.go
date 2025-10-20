@@ -14,7 +14,7 @@ func NewLoggerMiddleware(p Params) echo.MiddlewareFunc {
 	}
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			p.Logger.Bg().Info("",
+			p.Logger.For(c.Request().Context()).Info("",
 				zap.Duration("latency", v.Latency),
 				zap.String("protocol", v.Protocol),
 				zap.String("remote_ip", v.RemoteIP),

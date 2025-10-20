@@ -28,7 +28,7 @@ func (bh BaseHandler) DecodeRequest(c echo.Context, requestObject interface{}) e
 		}
 	}()
 	if err != nil {
-		return errors.Error{
+		return &errors.Error{
 			Code:    errors.EINVALID,
 			Message: "unable to serialize JSON body.",
 			Op:      "DecodeRequest",
@@ -44,7 +44,7 @@ func (bh *BaseHandler) NewSuccess(c echo.Context, responseObject interface{}, st
 }
 
 func (bh *BaseHandler) NewError(c echo.Context, err error) error {
-	routeError := errors.Error{
+	routeError := &errors.Error{
 		Op:  "RouteHandler",
 		Err: err,
 	}

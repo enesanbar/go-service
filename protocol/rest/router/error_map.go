@@ -22,7 +22,7 @@ var CodeMapHTTP = map[string]int{
 func ErrorStatus(err error) int {
 	if err == nil {
 		return 500
-	} else if e, ok := err.(errors.Error); ok && e.Code != "" {
+	} else if e, ok := err.(*errors.Error); ok && e.Code != "" {
 		return CodeMapHTTP[e.Code]
 	} else if ok && e.Err != nil {
 		return ErrorStatus(e.Err)

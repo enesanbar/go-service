@@ -52,7 +52,7 @@ type ApiResponse struct {
 func NewApiResponse(code int, data interface{}, err error) ApiResponse {
 	response := ApiResponse{Err: err, Data: data, Status: code}
 
-	if e, ok := err.(errors.Error); ok && e.Err != nil {
+	if e, ok := err.(*errors.Error); ok && e.Err != nil {
 		_, f, n, _ := runtime.Caller(1)
 		response.Error = errors.ErrorMessage(err)
 		response.File = f
