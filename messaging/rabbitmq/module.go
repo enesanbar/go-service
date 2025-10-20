@@ -72,16 +72,18 @@ type MessageHandlerParams struct {
 	Handlers []consumer.MessageHandler `group:"message-handlers"`
 }
 
+func MapMessageHandlers(p MessageHandlerParams) map[string]consumer.MessageHandler {
+	handlersMap := make(map[string]consumer.MessageHandler)
+	for _, handler := range p.Handlers {
+		key := fmt.Sprintf("%s-%s", handler.Properties().QueueName, handler.Properties().MessageName)
+		handlersMap[key] = handler
+	}
+	return handlersMap
+}
+
 var ConsumerModule = fx.Module(
 	"messaging.rabbitmq.consumer",
-	fx.Provide(func(p MessageHandlerParams) map[string]consumer.MessageHandler {
-		handlersMap := make(map[string]consumer.MessageHandler)
-		for _, handler := range p.Handlers {
-			key := fmt.Sprintf("%s-%s", handler.Properties().QueueName, handler.Properties().MessageName)
-			handlersMap[key] = handler
-		}
-		return handlersMap
-	}),
+	fx.Provide(MapMessageHandlers),
 	fx.Provide(
 		fx.Annotate(
 			Consumers,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/enesanbar/go-service/core/info"
@@ -18,37 +19,44 @@ import (
 
 type Producer struct {
 	Logger     log.Factory
-	Channel    *Channel
-	Channels   map[string]*Channel
+	Connection *Connection
 	Propagator propagation.TextMapPropagator
 }
 
 type ProducerParams struct {
 	fx.In
 
-	Logger     log.Factory
-	Channels   map[string]*Channel
-	Propagator propagation.TextMapPropagator
+	Logger      log.Factory
+	Connections map[string]*Connection
+	Propagator  propagation.TextMapPropagator
 }
 
 // NewRabbitMQProducer creates a pointer to the new instance of the Producer
-func NewRabbitMQProducer(params ProducerParams) *Producer {
+func NewRabbitMQProducer(params ProducerParams) (*Producer, error) {
 	p := &Producer{
 		Logger:     params.Logger,
-		Channels:   params.Channels,
 		Propagator: params.Propagator,
 	}
-	// set the default channel and queue if exists in Channels and Queues
-	if len(p.Channels) > 0 {
-		for name, channel := range p.Channels {
-			if name == "default" {
-				p.Channel = channel
-				break
-			}
-		}
+
+	if len(params.Connections) == 0 {
+		return nil, fmt.Errorf("no connections found. please check the connection configuration in your configuration")
 	}
 
-	return p
+	// Use the first connection for the producer
+	for _, conn := range params.Connections {
+		if conn == nil {
+			continue
+		}
+		p.Connection = conn
+		p.Logger.Bg().Info("using connection for producer", zap.String("connection", conn.Name()))
+		break
+	}
+
+	if p.Connection == nil {
+		return nil, fmt.Errorf("no valid connection found for producer")
+	}
+
+	return p, nil
 }
 
 func (p *Producer) Publish(ctx context.Context, messageName string, payload any) error {
@@ -69,7 +77,18 @@ func (p *Producer) Publish(ctx context.Context, messageName string, payload any)
 		return err
 	}
 
-	return p.Channel.Channel.PublishWithContext(
+	channel, err := p.Connection.Conn.Channel()
+	if err != nil {
+		return fmt.Errorf("failed to create channel: %w", err)
+	}
+	defer func() {
+		if err := channel.Close(); err != nil {
+			p.Logger.Bg().Error("failed to close channel", zap.Error(err))
+		}
+	}()
+
+	// TODO: Optionally log the message
+	return channel.PublishWithContext(
 		ctx,
 		info.ServiceName, // exchange
 		messageName,      // routing key
@@ -80,14 +99,6 @@ func (p *Producer) Publish(ctx context.Context, messageName string, payload any)
 			Body:        body,
 		},
 	)
-}
-
-func (p *Producer) SetChannel(channelName string) {
-	channel, ok := p.Channels[channelName]
-	if !ok {
-		p.Logger.Bg().Error(fmt.Sprintf("channel %s not found", channelName))
-	}
-	p.Channel = channel
 }
 
 func (p *Producer) enrichMessageWithTrace(ctx context.Context, message *messages.Message[any]) {
