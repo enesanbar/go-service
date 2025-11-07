@@ -50,11 +50,90 @@ This directory contains GitHub Actions workflows for the multi-module Go monorep
 - Single module validation: <2 minutes
 - Caching for Go dependencies and build artifacts
 
+---
+
+### `release.yml` - Automated Release
+
+**Purpose**: Automatically creates semantic version tags when changes are merged to main.
+
+**Triggers**:
+
+- Push to `main` branch
+- Manual workflow dispatch (optional: specify modules and dry-run mode)
+
+**Jobs**:
+
+1. **detect-changes**: Identifies modules with changes
+   - Reuses same logic as CI workflow
+   - Compares against module-specific tags
+   - Outputs JSON array of changed modules
+
+2. **calculate-versions**: Determines next version for each module
+   - Analyzes conventional commits since last tag
+   - Determines bump type (major/minor/patch)
+   - Supports manual version override
+   - Matrix strategy across changed modules
+
+3. **create-tags**: Creates and pushes git tags
+   - Creates directory-prefixed tags (e.g., `cache/inmemory/v0.1.0`)
+   - Includes retry logic with exponential backoff
+   - Dry-run mode for testing
+   - Matrix strategy across changed modules
+
+4. **summary**: Provides release summary
+   - Lists all tagged modules
+   - Shows version increments
+   - Links to next steps
+
+**Conventional Commit Types**:
+
+- `feat:` - Minor version bump (new features)
+- `fix:` - Patch version bump (bug fixes)
+- `feat!:` or `BREAKING CHANGE:` - Major version bump
+- Other types (chore, docs, etc.) - Patch version bump
+
+**Manual Version Override**:
+
+Use workflow dispatch with specific version:
+
+```bash
+# Trigger workflow manually from GitHub UI
+# Input: modules = "cache/inmemory"
+# Input: dry_run = true
+```
+
+**Dry Run Mode**:
+
+Test tagging without pushing:
+
+```bash
+# Enable dry_run in workflow dispatch
+# Tags created locally but not pushed to remote
+```
+
+**Environment Variables**:
+
+- `GO_VERSION`: Go version for workflow (default: 1.25)
+
+**Tag Format**:
+
+- Directory-prefixed: `<module-path>/v<version>`
+- Examples: `cache/inmemory/v0.1.0`, `core/errors/v1.2.3`
+
+**Performance**:
+
+- Parallel version calculation for multiple modules
+- Automatic retry on push failures
+- Exponential backoff for network issues
+
+
+
 ## Usage
 
 ### Viewing Test Results
 
 Test results appear in:
+
 - PR checks summary
 - Workflow run summary page
 - Job summaries with coverage percentages
@@ -62,12 +141,15 @@ Test results appear in:
 ### Viewing Coverage Reports
 
 1. **In PR Comments/Summaries**: Coverage percentage displayed per module
-2. **Download Artifacts**: 
+2. **Download Artifacts**:
+
    ```bash
    # From GitHub Actions UI
    Actions → Workflow Run → Artifacts → coverage-<module-path>
    ```
+
 3. **Local Viewing**:
+
    ```bash
    # Download coverage file
    go tool cover -html=coverage/module-coverage.out
@@ -109,10 +191,12 @@ Admins can merge PRs with failing checks if necessary, but this is not recommend
 ### Adjusting Coverage Threshold
 
 Edit `.github/workflows/ci.yml`:
+
 ```yaml
 env:
   COVERAGE_THRESHOLD: 75  # Lower to 75%
 ```
+
 
 ### Changing Linter Rules
 

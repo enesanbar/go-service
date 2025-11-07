@@ -7,12 +7,17 @@ This directory contains Bash scripts for the multi-module CI/CD pipeline.
 ```text
 .github/scripts/
 ├── detect-changed-modules.sh    # Main: Module change detection
+├── analyze-commits.sh           # Conventional commit analysis
+├── calculate-version.sh         # Semantic version calculation
+├── create-tags.sh               # Git tag creation and pushing
 ├── lib/                          # Utility libraries
 │   ├── git-utils.sh             # Git operations
 │   ├── semver-utils.sh          # Semantic versioning
 │   └── module-utils.sh          # Module discovery and validation
 └── tests/                        # BATS integration tests
     ├── test-detect-modules.bats # Tests for change detection
+    ├── test-analyze-commits.bats # Tests for commit analysis
+    ├── test-calculate-version.bats # Tests for version calculation
     └── fixtures/                 # Test data
 ```
 
@@ -68,6 +73,7 @@ OPTIONS:
 - `2`: Git operation error
 
 **Algorithm**:
+
 1. Discover all Go modules (find go.mod files)
 2. For each module, get its latest tag (e.g., `cache/inmemory/v0.1.0`)
 3. If no tag exists, treat as new module (all files changed)
@@ -75,6 +81,170 @@ OPTIONS:
 5. Check for non-module file changes (README, CI config)
 6. If non-module files changed, return all modules
 7. Output JSON array of changed modules
+
+---
+
+### `analyze-commits.sh`
+
+**Purpose**: Analyze conventional commits for a module to determine version bump type.
+
+**Usage**:
+
+```bash
+./analyze-commits.sh <module-path> [OPTIONS]
+
+OPTIONS:
+    --from-tag TAG      Compare from this tag (default: latest tag for module)
+    --output FORMAT     Output format: json or text (default: text)
+    -h, --help          Show help message
+```
+
+**Examples**:
+
+```bash
+# Analyze commits since last tag
+./analyze-commits.sh cache/inmemory --output json
+
+# Analyze from specific tag
+./analyze-commits.sh core/errors --from-tag core/errors/v0.1.0
+```
+
+**Output (JSON)**:
+
+```json
+{
+  "module": "cache/inmemory",
+  "recommended_bump": "minor",
+  "commit_count": 3,
+  "has_breaking": false,
+  "has_feat": true,
+  "has_fix": true,
+  "commits": [
+    {
+      "hash": "abc123",
+      "type": "feat",
+      "bump": "minor",
+      "subject": "add caching feature"
+    }
+  ],
+  "warnings": []
+}
+```
+
+**Exit Codes**:
+
+- `0`: Success
+- `1`: Invalid arguments
+- `2`: Git operation error
+- `3`: No commits found for module
+
+**Commit Type Classification**:
+
+- `feat:` → minor bump
+- `fix:` → patch bump
+- `feat!:` or `BREAKING CHANGE:` → major bump
+- Other types → patch bump (with warning if non-conventional)
+
+---
+
+### `calculate-version.sh`
+
+**Purpose**: Calculate the next semantic version for a module based on commit analysis.
+
+**Usage**:
+
+```bash
+./calculate-version.sh <module-path> [OPTIONS]
+
+OPTIONS:
+    --override-version V  Manually specify next version (must be valid semver)
+    --output FORMAT       Output format: json or text (default: text)
+    -h, --help            Show help message
+```
+
+**Examples**:
+
+```bash
+# Auto-calculate next version
+./calculate-version.sh cache/inmemory --output json
+
+# Manual version override
+./calculate-version.sh core/errors --override-version 2.0.0
+```
+
+**Output (JSON)**:
+
+```json
+{
+  "module": "cache/inmemory",
+  "current_version": "0.1.0",
+  "next_version": "0.2.0",
+  "bump_type": "minor",
+  "message": "Calculated based on conventional commits"
+}
+```
+
+**Exit Codes**:
+
+- `0`: Success
+- `1`: Invalid arguments
+- `2`: Version calculation failed
+- `3`: Invalid version format
+
+**Version Calculation Logic**:
+
+1. Get current version from latest module tag
+2. Analyze commits using `analyze-commits.sh`
+3. Apply bump type: major (X.0.0), minor (x.Y.0), patch (x.y.Z)
+4. If no tag exists, start at `0.0.1`
+5. If no commits found, return current version (no bump)
+
+---
+
+### `create-tags.sh`
+
+**Purpose**: Create and push directory-prefixed git tags for modules.
+
+**Usage**:
+
+```bash
+./create-tags.sh <module-path> <version> [OPTIONS]
+
+OPTIONS:
+    --dry-run           Show what would be done without making changes
+    --push              Push tags to remote repository
+    -h, --help          Show help message
+```
+
+**Examples**:
+
+```bash
+# Create tag locally (test)
+./create-tags.sh cache/inmemory 0.1.0 --dry-run
+
+# Create and push tag
+./create-tags.sh core/errors 1.2.3 --push
+```
+
+**Exit Codes**:
+
+- `0`: Success
+- `1`: Invalid arguments
+- `2`: Tag creation failed
+- `3`: Tag push failed after retries
+
+**Tag Format**: `<module-path>/v<version>`
+
+Examples: `cache/inmemory/v0.1.0`, `core/errors/v1.2.3`
+
+**Retry Logic**:
+
+- Maximum retries: 3 (configurable via `MAX_RETRIES`)
+- Exponential backoff: 2s, 4s, 8s (configurable via `INITIAL_BACKOFF`)
+- Automatic cleanup of local tag on push failure
+
+---
+
 
 ## Library Functions
 

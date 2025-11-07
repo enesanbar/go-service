@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      modules:
+        description: 'Comma-separated list of modules to release (e.g., cache/inmemory,core/errors). Leave empty to auto-detect.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run mode (create tags locally but do not push)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  GO_VERSION: '1.25'
+
+jobs:
+  detect-changes:
+    name: Detect Changed Modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.detect.outputs.modules }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tag comparison
+
+      - name: Detect changed modules
+        id: detect
+        run: |
+          chmod +x .github/scripts/detect-changed-modules.sh
+          
+          # Run detection script
+          output=$(.github/scripts/detect-changed-modules.sh --output json)
+          
+          # Extract modules array and has_changes flag
+          modules=$(echo "$output" | jq -c '.modules')
+          has_changes=$(echo "$output" | jq -r '.has_changes')
+          
+          # Set outputs using heredoc format for multiline content
+          {
+            echo "modules<<EOF"
+            echo "$modules"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          
+          echo "has_changes=$has_changes" >> "$GITHUB_OUTPUT"
+          
+          # Display detected modules
+          echo "### Detected Changed Modules" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$has_changes" == "true" ]]; then
+            echo "$modules" | jq -r '.[] | "- `\(.path)` (current: \(.current_version // "none"))"' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No module changes detected." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  calculate-versions:
+    name: Calculate Versions
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    outputs:
+      versions: ${{ steps.calculate.outputs.versions }}
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.detect-changes.outputs.modules) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Calculate version for ${{ matrix.module.path }}
+        id: calculate
+        run: |
+          chmod +x .github/scripts/calculate-version.sh
+          
+          # Calculate next version
+          output=$(.github/scripts/calculate-version.sh "${{ matrix.module.path }}" --output json)
+          
+          # Extract version information
+          current_version=$(echo "$output" | jq -r '.current_version')
+          next_version=$(echo "$output" | jq -r '.next_version')
+          bump_type=$(echo "$output" | jq -r '.bump_type')
+          
+          echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
+          echo "module_path=${{ matrix.module.path }}" >> "$GITHUB_OUTPUT"
+          
+          # Display version calculation
+          echo "### Version Calculation for \`${{ matrix.module.path }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Current: \`$current_version\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: \`$next_version\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Bump type: \`$bump_type\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload version info
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-${{ matrix.module.artifact-name }}
+          path: |
+            .github/scripts/calculate-version.sh
+          retention-days: 1
+
+  create-tags:
+    name: Create and Push Tags
+    runs-on: ubuntu-latest
+    needs: [detect-changes, calculate-versions]
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.detect-changes.outputs.modules) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Calculate version
+        id: version
+        run: |
+          chmod +x .github/scripts/calculate-version.sh
+          
+          # Calculate next version
+          output=$(.github/scripts/calculate-version.sh "${{ matrix.module.path }}" --output json)
+          
+          # Extract version information
+          next_version=$(echo "$output" | jq -r '.next_version')
+          bump_type=$(echo "$output" | jq -r '.bump_type')
+          
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag for ${{ matrix.module.path }}
+        if: steps.version.outputs.bump_type != 'none'
+        env:
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        run: |
+          chmod +x .github/scripts/create-tags.sh
+          
+          # Determine push flag based on dry run mode
+          PUSH_FLAG=""
+          if [[ "$DRY_RUN" != "true" ]]; then
+            PUSH_FLAG="--push"
+          fi
+          
+          # Create and optionally push tag
+          if [[ "$DRY_RUN" == "true" ]]; then
+            .github/scripts/create-tags.sh "${{ matrix.module.path }}" "${{ steps.version.outputs.next_version }}" --dry-run
+          else
+            .github/scripts/create-tags.sh "${{ matrix.module.path }}" "${{ steps.version.outputs.next_version }}" $PUSH_FLAG
+          fi
+          
+          # Record in step summary
+          echo "### Tag Created for \`${{ matrix.module.path }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tag: \`${{ matrix.module.path }}/v${{ steps.version.outputs.next_version }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Bump type: \`${{ steps.version.outputs.bump_type }}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "- Mode: **DRY RUN** (tag not pushed)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Mode: Tag pushed to remote" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Skip tagging (no version bump needed)
+        if: steps.version.outputs.bump_type == 'none'
+        run: |
+          echo "ℹ No version bump needed for ${{ matrix.module.path }}" >> "$GITHUB_STEP_SUMMARY"
+
+  summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, create-tags]
+    if: always() && needs.detect-changes.outputs.has_changes == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release summary
+        run: |
+          echo "# Release Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          
+          # List all modules that were processed
+          modules='${{ needs.detect-changes.outputs.modules }}'
+          
+          echo "## Processed Modules" >> "$GITHUB_STEP_SUMMARY"
+          echo "$modules" | jq -r '.[] | "- `\(.path)`"' >> "$GITHUB_STEP_SUMMARY"
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Status" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Check if dry run mode
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "⚠️ **DRY RUN MODE** - Tags were not pushed to remote" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ Tags created and pushed successfully" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Next Steps" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Review the created tags in the repository" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Verify that Go modules can be imported using the new versions" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Update documentation to reflect new versions" >> "$GITHUB_STEP_SUMMARY"
