@@ -99,7 +99,7 @@ create_tag() {
         return 2
     fi
     
-    echo "✓ Created tag: $tag_name"
+    echo "✓ Created tag: $tag_name" >&2
     echo "$tag_name"  # Output tag name for use by caller
 }
 

@@ -20,7 +20,7 @@
 #   2 - Git operations failed
 #   3 - No commits found for module
 
-set -euo pipefail
+set -eo pipefail
 
 # Source utility libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,7 +75,7 @@ parse_commit_message() {
     fi
     
     # Check for BREAKING CHANGE footer
-    if echo "$commit_msg" | grep -q "^BREAKING CHANGE:"; then
+    if echo "$commit_msg" | grep -q "^BREAKING CHANGE:" || true; then
         is_breaking=true
     fi
     
@@ -129,13 +129,13 @@ analyze_commits() {
     fi
     
     # Get commits affecting this module
-    # Use custom delimiters to avoid conflicts with commit content
+    # Use ASCII separators: 0x1E (record sep) for fields, 0x1D (group sep) for commits
     local commits
     if [[ -n "$compare_from" ]]; then
-        commits=$(git log "${compare_from}..HEAD" --format="%H<FIELD_SEP>%s<FIELD_SEP>%b<COMMIT_SEP>" -- "$module_path" 2>/dev/null || true)
+        commits=$(git log "${compare_from}..HEAD" --format="%H%x1E%s%x1E%b%x1D" -- "$module_path" 2>/dev/null || true)
     else
         # No tag exists, get all commits for this module
-        commits=$(git log --format="%H<FIELD_SEP>%s<FIELD_SEP>%b<COMMIT_SEP>" -- "$module_path" 2>/dev/null || true)
+        commits=$(git log --format="%H%x1E%s%x1E%b%x1D" -- "$module_path" 2>/dev/null || true)
     fi
     
     if [[ -z "$commits" ]]; then
@@ -150,8 +150,11 @@ analyze_commits() {
     local commit_count=0
     declare -a commit_details=()
     
-    # Split commits by separator
-    IFS='<COMMIT_SEP>' read -ra commit_array <<< "$commits"
+    # Split commits by separator (0x1D = group separator)
+    # Replace 0x1D with newline, then use mapfile
+    local commits_newline="${commits//$'\x1D'/$'\n'}"
+    local commit_array=()
+    mapfile -t commit_array <<< "$commits_newline"
     
     for commit_line in "${commit_array[@]}"; do
         # Skip empty lines
@@ -159,8 +162,24 @@ analyze_commits() {
             continue
         fi
         
-        # Parse fields using field separator
-        IFS='<FIELD_SEP>' read -r hash subject body <<< "$commit_line"
+        # Parse fields using field separator (0x1E = record separator)
+        # Split on 0x1E to get exactly 3 fields: hash, subject, body
+        local parts=()
+        IFS=$'\x1E' read -ra parts <<< "$commit_line" || true
+        
+        # We expect at least hash and subject (body may be empty)
+        if [[ ${#parts[@]} -lt 2 ]]; then
+            continue
+        fi
+        
+        local hash="${parts[0]}"
+        local subject="${parts[1]}"
+        local body="${parts[2]:-}"
+        
+        # Skip if hash is empty or doesn't look like a git hash (40 hex chars)
+        if [[ -z "$hash" ]] || [[ ! "$hash" =~ ^[0-9a-f]{40}$ ]]; then
+            continue
+        fi
         
         # Trim trailing whitespace/newlines from subject
         subject="${subject%$'\n'}"
@@ -171,16 +190,16 @@ analyze_commits() {
         
         # Parse commit message
         local parse_result
-        parse_result=$(parse_commit_message "$full_msg")
+        parse_result=$(parse_commit_message "$full_msg") || continue
         local commit_type="${parse_result%%|*}"
         local is_breaking="${parse_result#*|}"
         
         # Classify commit
-        local bump_type
-        bump_type=$(classify_commit_type "$commit_type" "$is_breaking")
+        local bump_category
+        bump_category=$(classify_commit_type "$commit_type" "$is_breaking")
         
         # Track what types we've seen
-        case "$bump_type" in
+        case "$bump_category" in
             breaking)
                 has_breaking=true
                 ;;
@@ -195,8 +214,9 @@ analyze_commits() {
                 ;;
         esac
         
-        ((commit_count++))
-        commit_details+=("${hash}<FIELD_SEP>${commit_type}<FIELD_SEP>${bump_type}<FIELD_SEP>${subject}")
+        # Increment commit count (use : true to avoid set -e issues with arithmetic)
+        commit_count=$((commit_count + 1))
+        commit_details+=("${hash}"$'\x1E'"${commit_type}"$'\x1E'"${bump_category}"$'\x1E'"${subject}")
     done
     
     # Determine overall bump type (highest precedence wins)
@@ -214,7 +234,6 @@ analyze_commits() {
     if [[ "$has_unknown" == true ]]; then
         warnings+=("Some commits do not follow conventional commit format - defaulting to patch bump")
     fi
-    
     # Output results
     if [[ "$OUTPUT_FORMAT" == "json" ]]; then
         output_json "$module_path" "$recommended_bump" "$commit_count" \
@@ -242,12 +261,8 @@ output_json() {
     local commits_json="["
     local first=true
     for commit in "${commits_ref[@]}"; do
-        local hash="${commit%%<FIELD_SEP>*}"
-        local rest="${commit#*<FIELD_SEP>}"
-        local type="${rest%%<FIELD_SEP>*}"
-        rest="${rest#*<FIELD_SEP>}"
-        local bump="${rest%%<FIELD_SEP>*}"
-        local subject="${rest#*<FIELD_SEP>}"
+        local hash="" type="" bump="" subject=""
+        IFS=$'\x1E' read -r hash type bump subject <<< "$commit" || true
         
         if [[ "$first" != true ]]; then
             commits_json+=","
@@ -313,12 +328,8 @@ output_text() {
         echo ""
         echo "Commits:"
         for commit in "${commits_ref[@]}"; do
-            local hash="${commit%%<FIELD_SEP>*}"
-            local rest="${commit#*<FIELD_SEP>}"
-            local type="${rest%%<FIELD_SEP>*}"
-            rest="${rest#*<FIELD_SEP>}"
-            local bump="${rest%%<FIELD_SEP>*}"
-            local subject="${rest#*<FIELD_SEP>}"
+            local hash="" type="" bump="" subject=""
+            IFS=$'\x1E' read -r hash type bump subject <<< "$commit" || true
             echo "  [$bump] $hash - $type: $subject"
         done
     fi
