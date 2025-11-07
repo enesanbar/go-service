@@ -95,6 +95,9 @@ jobs:
           MODULE_NAME=$(echo "${{ matrix.module.path }}" | tr '/' '-')
           COVERAGE_FILE="coverage/${MODULE_NAME}-coverage.out"
           
+          # Set artifact name output (for upload step)
+          echo "artifact-name=${MODULE_NAME}" >> "$GITHUB_OUTPUT"
+          
           if go test -v -coverprofile="$COVERAGE_FILE" -covermode=atomic ./...; then
             echo "status=success" >> "$GITHUB_OUTPUT"
             echo "✅ Tests passed for ${{ matrix.module.path }}"
@@ -130,7 +133,7 @@ jobs:
         if: always() && steps.test.outputs.coverage-file
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.module.path }}
+          name: coverage-${{ steps.test.outputs.artifact-name }}
           path: ${{ matrix.module.path }}/${{ steps.test.outputs.coverage-file }}
           retention-days: ${{ env.COVERAGE_RETENTION_DAYS }}
           if-no-files-found: warn
@@ -181,9 +184,9 @@ jobs:
       
       - name: Run golangci-lint
         id: lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.55
+          version: v2.1
           working-directory: ${{ matrix.module.path }}
           args: --config=${{ github.workspace }}/.golangci.yml --timeout=5m
           skip-cache: false
