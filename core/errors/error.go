@@ -85,6 +85,7 @@ import (
 
 // Error represents a structured error with code, message, operation context,
 // and optional underlying error with stack trace preservation.
+// It supports fluent construction and data attachment for rich error handling.
 //
 // Stack traces are automatically captured when wrapping errors using NewError()
 // or any of the typed constructors. To print the full stack trace, use the
