@@ -63,16 +63,15 @@ parse_commit_message() {
     local commit_type=""
     local is_breaking=false
     
-    # Extract type from conventional commit format: type(scope): message
-    # or type: message
-    # Match: feat: or feat(scope): or feat!: or feat(scope)!:
-    if [[ "$commit_msg" =~ ^([a-z]+) ]]; then
+    # Extract type from conventional commit format
+    # Match patterns like: feat:, fix:, feat(scope):, etc.
+    if [[ "$commit_msg" =~ ^([a-z]+).*: ]]; then
         commit_type="${BASH_REMATCH[1]}"
-        
-        # Check for ! suffix indicating breaking change
-        if [[ "$commit_msg" =~ ! ]]; then
-            is_breaking=true
-        fi
+    fi
+    
+    # Check for ! indicating breaking change (before the colon)
+    if [[ "$commit_msg" =~ ^[a-z]+.*!: ]]; then
+        is_breaking=true
     fi
     
     # Check for BREAKING CHANGE footer
@@ -82,7 +81,7 @@ parse_commit_message() {
     
     echo "${commit_type}|${is_breaking}"
 }
-
+    
 # Classify commit type into version bump category
 classify_commit_type() {
     local commit_type="$1"
@@ -125,17 +124,17 @@ analyze_commits() {
     if [[ -n "$from_tag" ]]; then
         compare_from="$from_tag"
     else
-        # Get latest tag for this module
-        compare_from=$(get_latest_tag "$module_path" 2>/dev/null || echo "")
+        # Get latest tag for this module (allow failure)
+        compare_from=$(get_latest_tag "$module_path" 2>/dev/null || true)
     fi
     
     # Get commits affecting this module
     local commits
     if [[ -n "$compare_from" ]]; then
-        commits=$(git log "${compare_from}..HEAD" --format="%H|%s|%b" -- "$module_path" 2>/dev/null || echo "")
+        commits=$(git log "${compare_from}..HEAD" --format="%H|%s|%b" -- "$module_path" 2>/dev/null || true)
     else
         # No tag exists, get all commits for this module
-        commits=$(git log --format="%H|%s|%b" -- "$module_path" 2>/dev/null || echo "")
+        commits=$(git log --format="%H|%s|%b" -- "$module_path" 2>/dev/null || true)
     fi
     
     if [[ -z "$commits" ]]; then
@@ -159,6 +158,10 @@ analyze_commits() {
         local rest="${commit_line#*|}"
         local subject="${rest%%|*}"
         local body="${rest#*|}"
+        
+        # Trim trailing whitespace/newlines from subject
+        subject="${subject%$'\n'}"
+        subject="${subject%$'\r'}"
         
         # Combine subject and body for full message analysis
         local full_msg="${subject}"$'\n'"${body}"
@@ -191,7 +194,7 @@ analyze_commits() {
         
         ((commit_count++))
         commit_details+=("${hash}|${commit_type}|${bump_type}|${subject}")
-    done <<< "$commits"
+    done <<< "$commits" || true
     
     # Determine overall bump type (highest precedence wins)
     local recommended_bump="patch"
@@ -241,7 +244,7 @@ output_json() {
             commits_json+=","
         fi
         first=false
-        commits_json+="{\"hash\":\"$hash\",\"type\":\"$type\",\"bump\":\"$bump\",\"subject\":$(echo "$subject" | jq -Rs .)}"
+        commits_json+="{\"hash\":\"$hash\",\"type\":\"$type\",\"bump\":\"$bump\",\"subject\":$(printf '%s' "$subject" | jq -Rs .)}"
     done
     commits_json+="]"
     
@@ -253,7 +256,7 @@ output_json() {
             warnings_json+=","
         fi
         first=false
-        warnings_json+="$(echo "$warning" | jq -Rs .)"
+        warnings_json+="$(printf '%s' "$warning" | jq -Rs .)"
     done
     warnings_json+="]"
     

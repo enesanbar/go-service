@@ -112,20 +112,34 @@ calculate_next_version() {
     
     # Analyze commits to determine bump type
     local analyze_output
-    analyze_output=$("${SCRIPT_DIR}/analyze-commits.sh" "$module_path" --output json 2>&1) || {
-        local exit_code=$?
-        if [[ $exit_code -eq 3 ]]; then
+    local analyze_exit_code
+    
+    analyze_output=$("${SCRIPT_DIR}/analyze-commits.sh" "$module_path" --output json 2>&1 || true)
+    analyze_exit_code=$?
+    
+    if [[ $analyze_exit_code -ne 0 ]]; then
+        if [[ $analyze_exit_code -eq 3 ]]; then
             # No commits found - no version bump needed
             output_version_result "$module_path" "$current_version" "$current_version" "none" "No commits found for module"
             return 0
+        else
+            echo "Error: Failed to analyze commits (exit code: $analyze_exit_code)" >&2
+            if [[ -n "$analyze_output" ]]; then
+                echo "Output: $analyze_output" >&2
+            fi
+            return 2
         fi
-        echo "Error: Failed to analyze commits: $analyze_output" >&2
-        return 2
-    }
+    fi
     
     # Extract recommended bump type from JSON
     local recommended_bump
-    recommended_bump=$(echo "$analyze_output" | jq -r '.recommended_bump')
+    recommended_bump=$(echo "$analyze_output" | jq -r '.recommended_bump' 2>/dev/null || echo "")
+    
+    if [[ -z "$recommended_bump" ]] || [[ "$recommended_bump" == "null" ]]; then
+        echo "Error: Failed to extract recommended_bump from analyze output" >&2
+        echo "Analyze output was: $analyze_output" >&2
+        return 2
+    fi
     
     # Check for warnings
     local warnings
