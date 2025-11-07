@@ -110,14 +110,6 @@ jobs:
           echo "- Next: \`$next_version\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Bump type: \`$bump_type\`" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload version info
-        uses: actions/upload-artifact@v4
-        with:
-          name: version-${{ matrix.module.artifact-name }}
-          path: |
-            .github/scripts/calculate-version.sh
-          retention-days: 1
-
   create-tags:
     name: Create and Push Tags
     runs-on: ubuntu-latest
