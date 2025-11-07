@@ -28,7 +28,7 @@ type ConnectionParams struct {
 }
 
 func NewConnection(p ConnectionParams) *Connection {
-	DSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Europe%%2FIstanbul",
+	DSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		p.Config.User, p.Config.Pass, p.Config.Host, p.Config.Port, p.Config.Database)
 	var db *sql.DB
 	var err error

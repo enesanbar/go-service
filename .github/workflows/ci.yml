@@ -1,0 +1,203 @@
+name: CI - Multi-Module Testing and Linting
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+env:
+  COVERAGE_THRESHOLD: 80
+  COVERAGE_BREAKING: false
+  COVERAGE_RETENTION_DAYS: 30
+
+jobs:
+  # Job 1: Detect which modules have changed
+  detect-changes:
+    name: Detect Changed Modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.detect.outputs.modules }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for tag comparison
+      
+      - name: Detect changed modules
+        id: detect
+        run: |
+          # Run detection script
+          modules_json=$(.github/scripts/detect-changed-modules.sh --format json)
+          
+          # Use multiline output format for JSON
+          echo "modules<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$modules_json" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          
+          # Check if any modules changed
+          if [[ "$modules_json" == "[]" ]]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No modules changed"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changed modules detected:"
+            echo "$modules_json" | jq -r '.[].path'
+          fi
+  
+  # Job 2: Run tests for each changed module in parallel
+  test:
+    name: Test Module
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module.path }}/go.mod
+          cache-dependency-path: ${{ matrix.module.path }}/go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles(format('{0}/go.sum', matrix.module.path)) }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Run tests
+        id: test
+        working-directory: ${{ matrix.module.path }}
+        run: |
+          echo "Running tests for module: ${{ matrix.module.name }}"
+          
+          # Create coverage directory
+          mkdir -p coverage
+          
+          # Run tests with coverage
+          MODULE_NAME=$(echo "${{ matrix.module.path }}" | tr '/' '-')
+          COVERAGE_FILE="coverage/${MODULE_NAME}-coverage.out"
+          
+          # Set artifact name output (for upload step)
+          echo "artifact-name=${MODULE_NAME}" >> "$GITHUB_OUTPUT"
+          
+          if go test -v -coverprofile="$COVERAGE_FILE" -covermode=atomic ./...; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+            echo "✅ Tests passed for ${{ matrix.module.path }}"
+            
+            # Calculate coverage percentage
+            if [[ -f "$COVERAGE_FILE" ]]; then
+              COVERAGE=$(go tool cover -func="$COVERAGE_FILE" | grep total: | awk '{print $3}' | sed 's/%//')
+              echo "coverage-percent=$COVERAGE" >> "$GITHUB_OUTPUT"
+              echo "coverage-file=$COVERAGE_FILE" >> "$GITHUB_OUTPUT"
+              echo "Coverage: ${COVERAGE}%"
+              
+              # Check against threshold
+              THRESHOLD=${{ env.COVERAGE_THRESHOLD }}
+              if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+                echo "coverage-status=below-threshold" >> "$GITHUB_OUTPUT"
+                echo "::warning title=Low Coverage::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}% for ${{ matrix.module.path }}"
+              else
+                echo "coverage-status=pass" >> "$GITHUB_OUTPUT"
+              fi
+            else
+              echo "coverage-percent=0" >> "$GITHUB_OUTPUT"
+              echo "coverage-status=no-coverage" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+            echo "coverage-percent=0" >> "$GITHUB_OUTPUT"
+            echo "coverage-status=test-failed" >> "$GITHUB_OUTPUT"
+            echo "❌ Tests failed for ${{ matrix.module.path }}"
+            exit 1
+          fi
+      
+      - name: Upload coverage artifact
+        if: always() && steps.test.outputs.coverage-file
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ steps.test.outputs.artifact-name }}
+          path: ${{ matrix.module.path }}/${{ steps.test.outputs.coverage-file }}
+          retention-days: ${{ env.COVERAGE_RETENTION_DAYS }}
+          if-no-files-found: warn
+      
+      - name: Add job summary
+        if: always()
+        run: |
+          echo "## Test Results: ${{ matrix.module.path }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Module**: \`${{ matrix.module.name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Path**: \`${{ matrix.module.path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Status**: ${{ steps.test.outcome == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          
+          # Add coverage information if available
+          if [[ -n "${{ steps.test.outputs.coverage-percent }}" ]]; then
+            COVERAGE="${{ steps.test.outputs.coverage-percent }}"
+            THRESHOLD="${{ env.COVERAGE_THRESHOLD }}"
+            STATUS_ICON="✅"
+            
+            if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+              STATUS_ICON="⚠️"
+            fi
+            
+            echo "**Coverage**: ${STATUS_ICON} ${COVERAGE}% (threshold: ${THRESHOLD}%)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+  
+  # Job 3: Run linting for each changed module in parallel
+  lint:
+    name: Lint Module
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: false  # Temporarily disabled until golangci-lint supports Go 1.25
+    # if: needs.detect-changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ matrix.module.path }}/go.mod
+          cache: false  # golangci-lint-action handles caching
+      
+      - name: Run golangci-lint
+        id: lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+          working-directory: ${{ matrix.module.path }}
+          args: --config=${{ github.workspace }}/.golangci.yml --timeout=5m
+          skip-cache: false
+      
+      - name: Add lint summary
+        if: always()
+        run: |
+          echo "## Lint Results: ${{ matrix.module.path }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Module**: \`${{ matrix.module.name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Path**: \`${{ matrix.module.path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ job.status == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY

@@ -48,9 +48,6 @@ func NewClientOptionServiceConfigFactory(Config config.Config) func(serviceName 
 			}
 		} else {
 			serviceConfig = ServiceConfig{
-				LoadBalancingConfig: []map[string]any{
-					{"round_robin": map[string]any{}},
-				},
 				MethodConfig: []MethodConfig{{
 					Name:    []map[string]string{{"service": ""}},
 					Timeout: "10s",
