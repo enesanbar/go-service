@@ -37,12 +37,15 @@ jobs:
         run: |
           chmod +x .github/scripts/detect-changed-modules.sh
           
-          # Run detection script
-          output=$(.github/scripts/detect-changed-modules.sh --output json)
+          # Run detection script (returns JSON array directly)
+          modules=$(.github/scripts/detect-changed-modules.sh --format json)
           
-          # Extract modules array and has_changes flag
-          modules=$(echo "$output" | jq -c '.modules')
-          has_changes=$(echo "$output" | jq -r '.has_changes')
+          # Check if array is empty
+          if [[ "$modules" == "[]" ]]; then
+            has_changes="false"
+          else
+            has_changes="true"
+          fi
           
           # Set outputs using heredoc format for multiline content
           {

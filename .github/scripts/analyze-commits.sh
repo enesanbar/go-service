@@ -65,11 +65,12 @@ parse_commit_message() {
     
     # Extract type from conventional commit format: type(scope): message
     # or type: message
-    if [[ "$commit_msg" =~ ^([a-z]+)(\([^)]+\))?!?:\ .+ ]]; then
+    # Match: feat: or feat(scope): or feat!: or feat(scope)!:
+    if [[ "$commit_msg" =~ ^([a-z]+) ]]; then
         commit_type="${BASH_REMATCH[1]}"
         
         # Check for ! suffix indicating breaking change
-        if [[ "$commit_msg" =~ ^[a-z]+(\([^)]+\))?!: ]]; then
+        if [[ "$commit_msg" =~ ! ]]; then
             is_breaking=true
         fi
     fi
