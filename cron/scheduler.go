@@ -1,6 +1,8 @@
 package cron
 
 import (
+	"context"
+
 	"github.com/robfig/cron/v3"
 	"go.uber.org/fx"
 
@@ -26,7 +28,7 @@ func NewScheduler(p SchedulerParams) (wiring.RunnableGroup, *Scheduler) {
 	return wiring.RunnableGroup{Runnable: scheduler}, scheduler
 }
 
-func (s *Scheduler) Start() error {
+func (s *Scheduler) Start(_ context.Context) error {
 	s.logger.Bg().Info("Getting all registered CRON jobs...")
 	for _, job := range s.specJobs {
 		s.logger.Bg().Infof("[%s] Registering job in the scheduler", job.Description)
@@ -44,7 +46,7 @@ func (s *Scheduler) Start() error {
 	return nil
 }
 
-func (s *Scheduler) Stop() error {
+func (s *Scheduler) Stop(_ context.Context) error {
 	s.logger.Bg().Info("Stopping cron scheduler...")
 	s.cron.Stop()
 	return nil
