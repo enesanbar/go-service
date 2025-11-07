@@ -129,12 +129,13 @@ analyze_commits() {
     fi
     
     # Get commits affecting this module
+    # Use custom delimiters to avoid conflicts with commit content
     local commits
     if [[ -n "$compare_from" ]]; then
-        commits=$(git log "${compare_from}..HEAD" --format="%H|%s|%b" -- "$module_path" 2>/dev/null || true)
+        commits=$(git log "${compare_from}..HEAD" --format="%H<FIELD_SEP>%s<FIELD_SEP>%b<COMMIT_SEP>" -- "$module_path" 2>/dev/null || true)
     else
         # No tag exists, get all commits for this module
-        commits=$(git log --format="%H|%s|%b" -- "$module_path" 2>/dev/null || true)
+        commits=$(git log --format="%H<FIELD_SEP>%s<FIELD_SEP>%b<COMMIT_SEP>" -- "$module_path" 2>/dev/null || true)
     fi
     
     if [[ -z "$commits" ]]; then
@@ -149,15 +150,17 @@ analyze_commits() {
     local commit_count=0
     declare -a commit_details=()
     
-    while IFS= read -r commit_line; do
-        if [[ -z "$commit_line" ]]; then
+    # Split commits by separator
+    IFS='<COMMIT_SEP>' read -ra commit_array <<< "$commits"
+    
+    for commit_line in "${commit_array[@]}"; do
+        # Skip empty lines
+        if [[ -z "$commit_line" ]] || [[ "$commit_line" == $'\n'* ]]; then
             continue
         fi
         
-        local hash="${commit_line%%|*}"
-        local rest="${commit_line#*|}"
-        local subject="${rest%%|*}"
-        local body="${rest#*|}"
+        # Parse fields using field separator
+        IFS='<FIELD_SEP>' read -r hash subject body <<< "$commit_line"
         
         # Trim trailing whitespace/newlines from subject
         subject="${subject%$'\n'}"
@@ -193,8 +196,8 @@ analyze_commits() {
         esac
         
         ((commit_count++))
-        commit_details+=("${hash}|${commit_type}|${bump_type}|${subject}")
-    done <<< "$commits" || true
+        commit_details+=("${hash}<FIELD_SEP>${commit_type}<FIELD_SEP>${bump_type}<FIELD_SEP>${subject}")
+    done
     
     # Determine overall bump type (highest precedence wins)
     local recommended_bump="patch"
@@ -239,7 +242,13 @@ output_json() {
     local commits_json="["
     local first=true
     for commit in "${commits_ref[@]}"; do
-        IFS='|' read -r hash type bump subject <<< "$commit"
+        local hash="${commit%%<FIELD_SEP>*}"
+        local rest="${commit#*<FIELD_SEP>}"
+        local type="${rest%%<FIELD_SEP>*}"
+        rest="${rest#*<FIELD_SEP>}"
+        local bump="${rest%%<FIELD_SEP>*}"
+        local subject="${rest#*<FIELD_SEP>}"
+        
         if [[ "$first" != true ]]; then
             commits_json+=","
         fi
@@ -304,7 +313,12 @@ output_text() {
         echo ""
         echo "Commits:"
         for commit in "${commits_ref[@]}"; do
-            IFS='|' read -r hash type bump subject <<< "$commit"
+            local hash="${commit%%<FIELD_SEP>*}"
+            local rest="${commit#*<FIELD_SEP>}"
+            local type="${rest%%<FIELD_SEP>*}"
+            rest="${rest#*<FIELD_SEP>}"
+            local bump="${rest%%<FIELD_SEP>*}"
+            local subject="${rest#*<FIELD_SEP>}"
             echo "  [$bump] $hash - $type: $subject"
         done
     fi
