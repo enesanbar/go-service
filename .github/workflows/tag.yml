@@ -26,7 +26,7 @@ jobs:
       - name: Install semtag
         shell: bash
         run: |
-          curl -o semtag -L https://raw.githubusercontent.com/nico2sh/semtag/refs/heads/master/semtag
+          curl -o semtag -L https://raw.githubusercontent.com/nico2sh/semtag/refs/tags/v0.1.1/semtag
           chmod +x semtag
 
       - name: Get changed modules

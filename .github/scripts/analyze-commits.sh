@@ -127,7 +127,6 @@ analyze_commits() {
         # Get latest tag for this module (allow failure)
         compare_from=$(get_latest_tag "$module_path" 2>/dev/null || true)
     fi
-    
     # Get commits affecting this module
     # Use ASCII separators: 0x1E (record sep) for fields, 0x1D (group sep) for commits
     local commits
@@ -137,11 +136,11 @@ analyze_commits() {
         # No tag exists, get all commits for this module
         commits=$(git log --format="%H%x1E%s%x1E%b%x1D" -- "$module_path" 2>/dev/null || true)
     fi
-    
+
     if [[ -z "$commits" ]]; then
         return 3
     fi
-    
+
     # Analyze each commit
     local has_breaking=false
     local has_feat=false
@@ -149,19 +148,19 @@ analyze_commits() {
     local has_unknown=false
     local commit_count=0
     declare -a commit_details=()
-    
+
     # Split commits by separator (0x1D = group separator)
     # Replace 0x1D with newline, then use mapfile
     local commits_newline="${commits//$'\x1D'/$'\n'}"
     local commit_array=()
     mapfile -t commit_array <<< "$commits_newline"
-    
+
     for commit_line in "${commit_array[@]}"; do
         # Skip empty lines
         if [[ -z "$commit_line" ]] || [[ "$commit_line" == $'\n'* ]]; then
             continue
         fi
-        
+
         # Parse fields using field separator (0x1E = record separator)
         # Split on 0x1E to get exactly 3 fields: hash, subject, body
         local parts=()
@@ -193,7 +192,7 @@ analyze_commits() {
         parse_result=$(parse_commit_message "$full_msg") || continue
         local commit_type="${parse_result%%|*}"
         local is_breaking="${parse_result#*|}"
-        
+
         # Classify commit
         local bump_category
         bump_category=$(classify_commit_type "$commit_type" "$is_breaking")
